@@ -94,6 +94,9 @@
         <button data-v="fluffy" class="on">Fluffy</button>
         <button data-v="felt">Felt</button>
         <button data-v="clay">Clay</button>
+        <button data-v="glass">Glass</button>
+        <button data-v="jelly">Jelly</button>
+        <button data-v="furglass">Fur+Glass</button>
       </div>
     </div>
 
@@ -151,6 +154,7 @@
         <button data-v="transparent">None</button>
         <button data-v="solid">Solid</button>
         <button data-v="bokeh" class="on">Bokeh</button>
+        <button data-v="aurora">Aurora</button>
       </div>
     </div>
 
@@ -208,7 +212,13 @@ const PALETTES = [
   {name:"Pink Plush",  base:"#f2a7bc", glyph:"#7c2f45", bg:"#f6c9d6"},
   {name:"Night Fur",   base:"#26221f", glyph:"#cfc8bd", bg:"#171412"},
   {name:"Ivory Clay",  base:"#efe9dd", glyph:"#22201d", bg:"#ddd5c6"},
-  {name:"Denim",       base:"#3d4d7a", glyph:"#e9ecf5", bg:"#c9cfdd"}
+  {name:"Denim",       base:"#3d4d7a", glyph:"#e9ecf5", bg:"#c9cfdd"},
+  {name:"Lilac Glass", base:"#8d79b8", glyph:"#f0e8ff", bg:"#4a4157"},
+  {name:"Blossom",     base:"#f2b6c6", glyph:"#3a2a30", bg:"#cfc4b2"},
+  {name:"Meadow",      base:"#9ec27e", glyph:"#2c5a2e", bg:"#88a86a"},
+  {name:"Sunny Jelly", base:"#f5c445", glyph:"#2b2620", bg:"#f0e0c8"},
+  {name:"Candy",       base:"#bfa9e6", glyph:"#6a4a9e", bg:"#e9d9ec"},
+  {name:"Ice",         base:"#dfe9f2", glyph:"#2f4256", bg:"#aebfd2"}
 ];
 const CHIPS = ["♥","★","♪","♫","☾","☀","✈","✉","☏","⌂","⚑","☂","✂","⌛","⏱","✿","☘","A","B","M"];
 
@@ -341,7 +351,7 @@ function furStroke(g,rng,x,y,ang,len,w,color){
   g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(mx,my,ex,ey);g.stroke();
 }
 function renderFurBody(g,S,rng,opts){
-  const {path,radii,base,furLen,density,felt}=opts;
+  const {path,radii,base,furLen,density,felt,contained}=opts;
   const c=S/2,k=S/512;
   const L=furLen*k*(felt?0.45:1);
   const ph1=rng()*6.28, ph2=rng()*6.28;
@@ -386,8 +396,8 @@ function renderFurBody(g,S,rng,opts){
     furStroke(g,rng,s.x,s.y,flowAng(s.x,s.y,s.f),L*(0.5+rng()*0.5),1.3*k,
       shadeA(base,0.04+(rng()-0.4)*0.14,0.5));
   }
-  /* edge halo — short dense fluff, not spikes */
-  const fr=Math.round(2600*density);
+  /* edge halo — short dense fluff, not spikes (skipped when sealed under glass) */
+  const fr=contained?0:Math.round(2600*density);
   for(let i=0;i<fr;i++){
     const a=rng()*Math.PI*2;
     const ri=Math.floor(a/(Math.PI*2)*radii.length)%radii.length;
@@ -497,6 +507,74 @@ function drawGlyphRaised(g,S,rng,mask,color){
   g.drawImage(t,0,0);
 }
 
+/* ---------- glass / jelly bodies ---------- */
+function shapeMetrics(type,S){
+  const c=S/2;
+  if(type==="circle"){const r=S*0.335;return{x:c-r,y:c-r,w:2*r,h:2*r};}
+  if(type==="pill"){const w=S*0.78,h=S*0.40;return{x:c-w/2,y:c-h/2,w,h};}
+  const w=S*0.70;return{x:c-w/2,y:c-w/2,w,h:w};
+}
+function renderGlassBody(g,S,path,base,mode,shape){
+  const k=S/512,m=shapeMetrics(shape,S);
+  /* soft drop shadow + body tint */
+  g.save();
+  g.shadowColor="rgba(25,18,35,0.35)";g.shadowBlur=S*0.035;g.shadowOffsetY=S*0.02;
+  g.fillStyle=mode==="jelly"?shadeA(base,0,0.92):shadeA(base,+0.04,0.35);
+  g.fill(path);
+  g.restore();
+  g.save();g.clip(path);
+  /* vertical depth tint */
+  let lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
+  if(mode==="jelly"){
+    lg.addColorStop(0,shadeA(base,+0.14,0.95));
+    lg.addColorStop(0.55,shadeA(base,+0.02,0.25));
+    lg.addColorStop(1,shadeA(base,-0.14,0.80));
+  }else{
+    lg.addColorStop(0,shadeA(base,+0.18,0.30));
+    lg.addColorStop(0.6,shadeA(base,+0.05,0.05));
+    lg.addColorStop(1,shadeA(base,-0.08,0.35));
+  }
+  g.fillStyle=lg;g.fillRect(0,0,S,S);
+  /* light pooling at the bottom (refraction) */
+  const rg=g.createRadialGradient(S/2,m.y+m.h*0.92,S*0.02,S/2,m.y+m.h*0.92,m.w*0.45);
+  rg.addColorStop(0,"rgba(255,255,255,0.38)");rg.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=rg;g.fillRect(0,0,S,S);
+  /* rim light — brighter top and bottom edges */
+  lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
+  lg.addColorStop(0,"rgba(255,255,255,0.85)");
+  lg.addColorStop(0.35,"rgba(255,255,255,0.15)");
+  lg.addColorStop(1,"rgba(255,255,255,0.90)");
+  g.strokeStyle=lg;g.lineWidth=4*k;g.stroke(path);
+  /* specular lens */
+  lg=g.createLinearGradient(0,m.y+m.h*0.06,0,m.y+m.h*0.42);
+  lg.addColorStop(0,"rgba(255,255,255,0.60)");lg.addColorStop(1,"rgba(255,255,255,0.03)");
+  g.fillStyle=lg;
+  g.beginPath();g.ellipse(m.x+m.w/2,m.y+m.h*0.22,m.w*0.38,m.h*0.17,0,0,Math.PI*2);g.fill();
+  /* sparkle dots */
+  g.filter=`blur(${1.5*k}px)`;
+  g.fillStyle="rgba(255,255,255,0.9)";
+  g.beginPath();g.ellipse(m.x+m.w*0.22,m.y+m.h*0.16,7*k,4*k,-0.5,0,Math.PI*2);g.fill();
+  g.beginPath();g.ellipse(m.x+m.w*0.80,m.y+m.h*0.13,4*k,2.5*k,0.4,0,Math.PI*2);g.fill();
+  g.filter="none";
+  g.restore();
+}
+/* glass case over a fur body */
+function glassOverlay(g,S,path,shape){
+  const k=S/512,m=shapeMetrics(shape,S);
+  g.save();g.clip(path);
+  g.fillStyle="rgba(255,255,255,0.07)";g.fillRect(0,0,S,S);
+  let lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
+  lg.addColorStop(0,"rgba(255,255,255,0.80)");
+  lg.addColorStop(0.4,"rgba(255,255,255,0.12)");
+  lg.addColorStop(1,"rgba(255,255,255,0.85)");
+  g.strokeStyle=lg;g.lineWidth=5*k;g.stroke(path);
+  lg=g.createLinearGradient(0,m.y+m.h*0.05,0,m.y+m.h*0.40);
+  lg.addColorStop(0,"rgba(255,255,255,0.50)");lg.addColorStop(1,"rgba(255,255,255,0.02)");
+  g.fillStyle=lg;
+  g.beginPath();g.ellipse(m.x+m.w/2,m.y+m.h*0.20,m.w*0.38,m.h*0.15,0,0,Math.PI*2);g.fill();
+  g.restore();
+}
+
 /* ---------- clay body ---------- */
 function renderClayBody(g,S,path,base){
   const c=S/2;
@@ -522,6 +600,21 @@ function renderBackground(g,S,rng){
   if(state.bg==="transparent")return;
   const bg=state.bgColor;
   if(state.bg==="solid"){g.fillStyle=bg;g.fillRect(0,0,S,S);return;}
+  if(state.bg==="aurora"){ /* pastel multi-hue wash */
+    const [r0,g0,b0]=hexToRgb(bg);const [h,s]=rgbToHsl(r0,g0,b0);
+    const [rr,gg2,bb2]=hslToRgb(h,Math.min(1,s*0.6),0.88);
+    g.fillStyle=`rgb(${rr},${gg2},${bb2})`;g.fillRect(0,0,S,S);
+    const offs=[-0.12,-0.05,0.04,0.10,0.18,0.28];
+    for(const o of offs){
+      const [cr,cg,cb]=hslToRgb(h+o,Math.min(1,s*0.9+0.15),0.76);
+      const x=rng()*S,y=rng()*S,r=S*(0.28+rng()*0.30);
+      const bl=g.createRadialGradient(x,y,0,x,y,r);
+      bl.addColorStop(0,`rgba(${cr},${cg},${cb},0.55)`);
+      bl.addColorStop(1,`rgba(${cr},${cg},${cb},0)`);
+      g.fillStyle=bl;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();
+    }
+    return;
+  }
   /* bokeh */
   const gr=g.createLinearGradient(0,0,0,S);
   gr.addColorStop(0,shade(bg,+0.06));gr.addColorStop(1,shade(bg,-0.05));
@@ -560,17 +653,22 @@ function renderIcon(ctx,S){
 
   if(state.style==="clay"){
     renderClayBody(g,S,path,state.baseColor);
+  }else if(state.style==="glass"||state.style==="jelly"){
+    renderGlassBody(g,S,path,state.baseColor,state.style,state.shape);
   }else{
+    const contained=state.style==="furglass";
     renderFurBody(g,S,rng,{path,radii,base:state.baseColor,
-      furLen:state.furLen,density:state.density,felt:state.style==="felt"});
+      furLen:state.furLen*(contained?0.8:1),density:state.density,
+      felt:state.style==="felt",contained});
     applyLighting(g,S);
+    if(contained)glassOverlay(g,S,path,state.shape);
   }
 
   /* glyph */
   const mask=buildGlyphMask(S);
   if(mask){
-    if(state.style==="clay"&&state.glyphStyle==="flocked"){
-      drawGlyphRaised(g,S,rng,mask,state.glyphColor); /* flocked reads poorly on clay */
+    if(["clay","glass","jelly"].includes(state.style)&&state.glyphStyle==="flocked"){
+      drawGlyphRaised(g,S,rng,mask,state.glyphColor); /* flocked reads poorly on smooth bodies */
     }else if(state.glyphStyle==="flocked"){
       drawGlyphFlocked(g,S,rng,mask,state.glyphColor,state.furLen,state.density);
     }else if(state.glyphStyle==="stitched"){
