@@ -29,13 +29,22 @@
   .wordmark{font:italic 600 26px/1 Georgia,"Times New Roman",serif;letter-spacing:.01em}
   .tagline{color:var(--ink-soft);font-size:13px}
   main{display:grid;grid-template-columns:320px 1fr;gap:20px;padding:10px 26px 40px;max-width:1280px;margin:0 auto}
-  @media (max-width:860px){main{grid-template-columns:1fr}aside{order:2}}
   aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 24px;
     display:flex;flex-direction:column;gap:18px;align-self:start}
-  .stage-wrap{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .stage-wrap{display:flex;flex-direction:column;gap:14px;min-width:0;
+    position:sticky;top:14px;align-self:start}
   .stage{background:var(--stage);border:1px solid var(--line);border-radius:16px;
     display:flex;align-items:center;justify-content:center;padding:28px;min-height:420px}
   #preview{width:min(440px,100%);height:auto;border-radius:8px}
+  #preview.checker{background:repeating-conic-gradient(rgba(127,127,127,.20) 0% 25%,transparent 0% 50%) 0 0/24px 24px;
+    outline:1px dashed var(--line)}
+  @media (max-width:860px){
+    main{grid-template-columns:1fr}
+    aside{order:2}
+    .stage-wrap{top:0;z-index:5;background:var(--ground);padding:8px 0 4px}
+    .stage{min-height:0;padding:12px}
+    #preview{width:min(220px,58vw)}
+  }
   .label{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:7px}
   .group{display:flex;flex-direction:column}
   .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px;flex-wrap:wrap}
@@ -176,6 +185,9 @@
         <option value="1024">1024 px</option>
       </select>
       <button class="btn primary" id="download">Download PNG</button>
+      <label class="hint" style="display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="noBg"> transparent PNG (no backdrop)
+      </label>
       <span class="status" id="status"></span>
     </div>
     <p class="hint">Tip: Play Store icons must be full-bleed 512×512 — use the <b>Solid</b> or <b>Bokeh</b> backdrop for those, and <b>None</b> (transparent) for in-app UI icons.</p>
@@ -275,7 +287,18 @@ function boundaryRadii(ctx,path,S,n){
 }
 
 /* ---------- glyph mask ---------- */
+const maskCache=new Map();
 function buildGlyphMask(S){
+  const key=S+"|"+state.glyphScale+"|"+state.glyphText+"|"+state.svgPath.trim();
+  if(!maskCache.has(key)){
+    if(maskCache.size>16)maskCache.clear();
+    const m=buildGlyphMaskUncached(S);
+    if(m)m.bbox=alphaBBox(m.canvas.getContext("2d"),S);
+    maskCache.set(key,m);
+  }
+  return maskCache.get(key);
+}
+function buildGlyphMaskUncached(S){
   const m=document.createElement("canvas");m.width=S;m.height=S;
   const g=m.getContext("2d");
   const box=S*(state.glyphScale/100);
@@ -431,7 +454,7 @@ function applyLighting(g,S){
 /* ---------- glyph finishes ---------- */
 function drawGlyphFlocked(g,S,rng,mask,color,furLen,density){
   const k=S/512,L=furLen*k*0.45;
-  const bb=alphaBBox(mask.canvas.getContext("2d"),S)||{x:0,y:0,w:S,h:S};
+  const bb=mask.bbox||{x:0,y:0,w:S,h:S};
   /* pressed-in shadow so the patch nests into the coat */
   g.save();g.filter=`blur(${4*k}px)`;g.globalAlpha=0.30;
   g.drawImage(tintMask(mask,"rgb(40,20,8)"),1.5*k,3*k);
@@ -471,7 +494,7 @@ function drawGlyphStitched(g,S,rng,mask,color){
   g.drawImage(tintMask(mask,"rgba(30,15,5,1)"),1.5*k,2.5*k);
   g.restore();
   const step=3*k,ang=-Math.PI/4,len=4.2*k;
-  const bb=alphaBBox(mask.canvas.getContext("2d"),S)||{x:0,y:0,w:S,h:S};
+  const bb=mask.bbox||{x:0,y:0,w:S,h:S};
   for(let y=bb.y;y<bb.y+bb.h;y+=step){
     for(let x=bb.x;x<bb.x+bb.w;x+=step){
       const jx=x+(rng()-0.5)*step, jy=y+(rng()-0.5)*step;
@@ -628,6 +651,7 @@ function renderBackground(g,S,rng){
 }
 
 /* ---------- main render ---------- */
+const radiiCache=new Map();
 function renderIcon(ctx,S){
   const rng=mulberry32(state.seed>>>0 || 1);
   ctx.clearRect(0,0,S,S);
@@ -649,7 +673,9 @@ function renderIcon(ctx,S){
   const off=document.createElement("canvas");off.width=S;off.height=S;
   const g=off.getContext("2d");
   const path=shapePath(state.shape,S);
-  const radii=boundaryRadii(g,path,S,180);
+  const rkey=state.shape+"|"+S;
+  if(!radiiCache.has(rkey))radiiCache.set(rkey,boundaryRadii(g,path,S,180));
+  const radii=radiiCache.get(rkey);
 
   if(state.style==="clay"){
     renderClayBody(g,S,path,state.baseColor);
@@ -682,22 +708,28 @@ function renderIcon(ctx,S){
 
 /* ---------- UI wiring ---------- */
 const preview=$("preview"),pctx=preview.getContext("2d");
-let pending=null;
-function requestRender(){
+let pending=null,debTimer=null;
+/* immediate=true for discrete clicks; sliders/pickers debounce so the
+   heavy fur render runs once after the drag settles, not per pixel */
+function requestRender(immediate){
   $("status").textContent="rendering…";
-  if(pending)cancelAnimationFrame(pending);
-  pending=requestAnimationFrame(()=>{
-    const t0=performance.now();
-    renderIcon(pctx,512);
-    $("status").textContent=`seed ${state.seed} · ${(performance.now()-t0).toFixed(0)} ms`;
-    pending=null;
-  });
+  clearTimeout(debTimer);
+  debTimer=setTimeout(()=>{
+    if(pending)cancelAnimationFrame(pending);
+    pending=requestAnimationFrame(()=>{
+      const t0=performance.now();
+      renderIcon(pctx,512);
+      preview.classList.toggle("checker",state.bg==="transparent");
+      $("status").textContent=`seed ${state.seed} · ${(performance.now()-t0).toFixed(0)} ms`;
+      pending=null;
+    });
+  },immediate?0:150);
 }
 function seg(id,key){
   $(id).addEventListener("click",e=>{
     const b=e.target.closest("button");if(!b)return;
     $(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
-    state[key]=b.dataset.v;requestRender();
+    state[key]=b.dataset.v;requestRender(true);
   });
 }
 seg("segStyle","style");seg("segShape","shape");
@@ -717,7 +749,7 @@ $("density").addEventListener("input",e=>{state.density=+e.target.value/100;
 $("seed").addEventListener("input",e=>{state.seed=parseInt(e.target.value,10)||1;requestRender();});
 $("dice").addEventListener("click",()=>{
   state.seed=Math.floor(Math.random()*99999);
-  $("seed").value=state.seed;requestRender();
+  $("seed").value=state.seed;requestRender(true);
 });
 
 /* palette buttons */
@@ -730,7 +762,7 @@ PALETTES.forEach(p=>{
   b.addEventListener("click",()=>{
     state.baseColor=p.base;state.glyphColor=p.glyph;state.bgColor=p.bg;
     $("baseColor").value=p.base;$("glyphColor").value=p.glyph;$("bgColor").value=p.bg;
-    requestRender();
+    requestRender(true);
   });
   $("palettes").appendChild(b);
 });
@@ -738,7 +770,7 @@ PALETTES.forEach(p=>{
 CHIPS.forEach(ch=>{
   const b=document.createElement("button");b.textContent=ch;
   b.addEventListener("click",()=>{state.glyphText=ch;$("glyphText").value=ch;
-    state.svgPath="";$("svgPath").value="";requestRender();});
+    state.svgPath="";$("svgPath").value="";requestRender(true);});
   $("chips").appendChild(b);
 });
 
@@ -749,7 +781,10 @@ $("download").addEventListener("click",()=>{
   $("status").textContent=`exporting ${S}px…`;
   setTimeout(()=>{
     const c=document.createElement("canvas");c.width=S;c.height=S;
+    const prevBg=state.bg;
+    if($("noBg").checked)state.bg="transparent";
     renderIcon(c.getContext("2d"),S);
+    state.bg=prevBg;
     const url=c.toDataURL("image/png");
     const name=(state.glyphText||"icon").replace(/[^\w]/g,"")||"icon";
     const file=`plush-${state.style}-${name}-${S}.png`;
@@ -763,5 +798,5 @@ $("download").addEventListener("click",()=>{
 $("closeOverlay").addEventListener("click",()=>$("overlay").classList.remove("open"));
 $("overlay").addEventListener("click",e=>{if(e.target.id==="overlay")$("overlay").classList.remove("open");});
 
-requestRender();
+requestRender(true);
 </script>
