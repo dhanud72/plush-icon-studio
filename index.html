@@ -134,6 +134,13 @@
       <div class="label">Glyph</div>
       <input type="text" id="glyphText" value="♥" maxlength="4" aria-label="Glyph character">
       <div class="chips" id="chips"></div>
+      <div class="row" style="margin-top:10px">
+        <label>Or upload</label>
+        <input type="file" id="glyphFile" accept="image/*"
+          style="flex:2;font-size:12px;color:var(--ink-soft);min-width:0">
+      </div>
+      <p class="hint" style="margin:6px 0 0">PNG with transparency works best; solid-background logos get the background removed automatically.</p>
+      <button class="btn" id="clearUpload" hidden style="margin-top:8px">✕ Remove uploaded glyph</button>
       <div class="row" style="margin-top:10px"><label>Size</label>
         <input type="range" id="glyphScale" min="25" max="75" value="46"><span class="val" id="glyphScaleV">46%</span></div>
       <div class="row" style="margin-top:4px"><label>Finish</label></div>
@@ -213,7 +220,8 @@
 const state = {
   style:"fluffy", shape:"squircle", glyphStyle:"flocked", bg:"bokeh",
   baseColor:"#efe3cd", glyphColor:"#8a5a3b", bgColor:"#e8c9b0",
-  glyphText:"♥", svgPath:"", glyphScale:46, furLen:14, density:1.0, seed:72
+  glyphText:"♥", svgPath:"", glyphScale:46, furLen:14, density:1.0, seed:72,
+  uploadImg:null, uploadId:0
 };
 
 const PALETTES = [
@@ -289,7 +297,8 @@ function boundaryRadii(ctx,path,S,n){
 /* ---------- glyph mask ---------- */
 const maskCache=new Map();
 function buildGlyphMask(S){
-  const key=S+"|"+state.glyphScale+"|"+state.glyphText+"|"+state.svgPath.trim();
+  const key=S+"|"+state.glyphScale+"|"+state.glyphText+"|"+state.svgPath.trim()
+    +"|u"+(state.uploadImg?state.uploadId:0);
   if(!maskCache.has(key)){
     if(maskCache.size>16)maskCache.clear();
     const m=buildGlyphMaskUncached(S);
@@ -303,7 +312,34 @@ function buildGlyphMaskUncached(S){
   const g=m.getContext("2d");
   const box=S*(state.glyphScale/100);
   const d=state.svgPath.trim();
-  if(d){
+  if(state.uploadImg){
+    const img=state.uploadImg;
+    if(!img.width||!img.height)return null;
+    const sc=box/Math.max(img.width,img.height);
+    const w=img.width*sc,h=img.height*sc;
+    const x0=Math.round(S/2-w/2),y0=Math.round(S/2-h/2);
+    g.drawImage(img,x0,y0,w,h);
+    const id=g.getImageData(0,0,S,S),px=id.data;
+    /* if the image itself has no real transparency, key out the background
+       (sampled from the drawn image's border) — count only inside the rect */
+    const x1=Math.min(S-1,x0+Math.round(w)-1),y1=Math.min(S-1,y0+Math.round(h)-1);
+    let trans=0,tot=0;
+    for(let y=y0;y<=y1;y+=2)for(let x=x0;x<=x1;x+=2){
+      if(px[(y*S+x)*4+3]<200)trans++;tot++;
+    }
+    if(trans<tot*0.05){
+      const lum=i=>0.299*px[i]+0.587*px[i+1]+0.114*px[i+2];
+      let bl=0,bn=0;
+      for(let x=x0;x<=x1;x+=3){bl+=lum((y0*S+x)*4)+lum((y1*S+x)*4);bn+=2;}
+      for(let y=y0;y<=y1;y+=3){bl+=lum((y*S+x0)*4)+lum((y*S+x1)*4);bn+=2;}
+      const bg=bn?bl/bn:255;
+      for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+        const i=(y*S+x)*4;
+        px[i+3]=Math.max(0,Math.min(255,Math.abs(lum(i)-bg)*4));
+      }
+      g.putImageData(id,0,0);
+    }
+  }else if(d){
     let path;try{path=new Path2D(d);}catch(e){return null;}
     /* measure raw bounds by test-draw */
     const t=document.createElement("canvas");t.width=S;t.height=S;
@@ -738,8 +774,24 @@ seg("segGlyphStyle","glyphStyle");seg("segBg","bg");
 [["baseColor","baseColor"],["glyphColor","glyphColor"],["bgColor","bgColor"]].forEach(([id,key])=>{
   $(id).addEventListener("input",e=>{state[key]=e.target.value;requestRender();});
 });
-$("glyphText").addEventListener("input",e=>{state.glyphText=e.target.value;requestRender();});
-$("svgPath").addEventListener("input",e=>{state.svgPath=e.target.value;requestRender();});
+function dropUpload(){
+  if(!state.uploadImg)return;
+  state.uploadImg=null;$("glyphFile").value="";$("clearUpload").hidden=true;
+}
+$("glyphText").addEventListener("input",e=>{state.glyphText=e.target.value;dropUpload();requestRender();});
+$("svgPath").addEventListener("input",e=>{state.svgPath=e.target.value;dropUpload();requestRender();});
+$("glyphFile").addEventListener("change",e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image();
+  img.onload=()=>{
+    state.uploadImg=img;state.uploadId++;
+    $("clearUpload").hidden=false;
+    requestRender(true);
+  };
+  img.onerror=()=>{$("status").textContent="couldn't read that image";};
+  img.src=URL.createObjectURL(f);
+});
+$("clearUpload").addEventListener("click",()=>{dropUpload();requestRender(true);});
 $("glyphScale").addEventListener("input",e=>{state.glyphScale=+e.target.value;
   $("glyphScaleV").textContent=e.target.value+"%";requestRender();});
 $("furLen").addEventListener("input",e=>{state.furLen=+e.target.value;
@@ -770,7 +822,7 @@ PALETTES.forEach(p=>{
 CHIPS.forEach(ch=>{
   const b=document.createElement("button");b.textContent=ch;
   b.addEventListener("click",()=>{state.glyphText=ch;$("glyphText").value=ch;
-    state.svgPath="";$("svgPath").value="";requestRender(true);});
+    state.svgPath="";$("svgPath").value="";dropUpload();requestRender(true);});
   $("chips").appendChild(b);
 });
 
