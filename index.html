@@ -1,0 +1,669 @@
+<title>Plush Icon Studio</title>
+<style>
+  :root{
+    --ground:#EAE6DE; --panel:#F6F3ED; --panel2:#EFEBE2; --ink:#33302B; --ink-soft:#6E6759;
+    --line:#D9D3C6; --accent:#5F7A5A; --accent-ink:#FFFFFF; --clay:#B0603F;
+    --stage:#E2DDD2; --shadow:rgba(51,48,43,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ground:#211E1A; --panel:#2C2823; --panel2:#332E28; --ink:#EDE8DF; --ink-soft:#A79D8D;
+      --line:#453F36; --accent:#8FAF88; --accent-ink:#1E241D; --clay:#C97F5E;
+      --stage:#282420; --shadow:rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#211E1A; --panel:#2C2823; --panel2:#332E28; --ink:#EDE8DF; --ink-soft:#A79D8D;
+    --line:#453F36; --accent:#8FAF88; --accent-ink:#1E241D; --clay:#C97F5E;
+    --stage:#282420; --shadow:rgba(0,0,0,.4);
+  }
+  :root[data-theme="light"]{
+    --ground:#EAE6DE; --panel:#F6F3ED; --panel2:#EFEBE2; --ink:#33302B; --ink-soft:#6E6759;
+    --line:#D9D3C6; --accent:#5F7A5A; --accent-ink:#FFFFFF; --clay:#B0603F;
+    --stage:#E2DDD2; --shadow:rgba(51,48,43,.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+    font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;}
+  header{display:flex;align-items:baseline;gap:14px;padding:18px 26px 10px;flex-wrap:wrap}
+  .wordmark{font:italic 600 26px/1 Georgia,"Times New Roman",serif;letter-spacing:.01em}
+  .tagline{color:var(--ink-soft);font-size:13px}
+  main{display:grid;grid-template-columns:320px 1fr;gap:20px;padding:10px 26px 40px;max-width:1280px;margin:0 auto}
+  @media (max-width:860px){main{grid-template-columns:1fr}aside{order:2}}
+  aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 24px;
+    display:flex;flex-direction:column;gap:18px;align-self:start}
+  .stage-wrap{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .stage{background:var(--stage);border:1px solid var(--line);border-radius:16px;
+    display:flex;align-items:center;justify-content:center;padding:28px;min-height:420px}
+  #preview{width:min(440px,100%);height:auto;border-radius:8px}
+  .label{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:7px}
+  .group{display:flex;flex-direction:column}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px;flex-wrap:wrap}
+  .seg button{flex:1;border:0;background:transparent;color:var(--ink-soft);padding:7px 6px;border-radius:6px;
+    font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+  .seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chips button{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:8px;
+    padding:5px 9px;font-size:16px;line-height:1;cursor:pointer}
+  .chips button:hover{border-color:var(--accent)}
+  .palettes{display:flex;flex-wrap:wrap;gap:8px}
+  .pal{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;padding:0;background:none}
+  .pal span{width:26px;height:26px;display:block}
+  .pal:hover{border-color:var(--accent)}
+  .row{display:flex;gap:10px;align-items:center}
+  .row label{flex:1;color:var(--ink-soft);font-size:13px}
+  input[type=range]{flex:2;accent-color:var(--accent)}
+  input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);padding:2px;cursor:pointer}
+  input[type=text]{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);
+    font:inherit;padding:8px 10px;width:100%}
+  textarea{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);
+    font:12px/1.4 Consolas,monospace;padding:8px;width:100%;min-height:60px;resize:vertical}
+  .val{font:12px Consolas,monospace;color:var(--ink-soft);min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+  details{border-top:1px dashed var(--line);padding-top:10px}
+  summary{cursor:pointer;color:var(--ink-soft);font-size:13px}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:9px;
+    padding:9px 16px;font:inherit;font-weight:600;cursor:pointer}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  select{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font:inherit;padding:8px 10px}
+  .hint{color:var(--ink-soft);font-size:12px}
+  .status{font:12px Consolas,monospace;color:var(--ink-soft)}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px}
+  .overlay{position:fixed;inset:0;background:rgba(20,17,14,.65);display:none;
+    align-items:center;justify-content:center;z-index:10;padding:20px}
+  .overlay.open{display:flex}
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:20px;max-width:min(560px,92vw);display:flex;flex-direction:column;gap:12px;align-items:center}
+  .sheet img{max-width:100%;width:340px;height:auto;border-radius:12px;
+    background:repeating-conic-gradient(var(--panel2) 0% 25%,var(--panel) 0% 50%) 0 0/20px 20px}
+  .sheet .hint{text-align:center}
+</style>
+
+<header>
+  <div class="wordmark">Plush Icon Studio</div>
+  <div class="tagline">procedural fluffy · felt · clay app icons — no AI image credits needed</div>
+</header>
+
+<main>
+  <aside>
+    <div class="group">
+      <div class="label">Material</div>
+      <div class="seg" id="segStyle">
+        <button data-v="fluffy" class="on">Fluffy</button>
+        <button data-v="felt">Felt</button>
+        <button data-v="clay">Clay</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="label">Shape</div>
+      <div class="seg" id="segShape">
+        <button data-v="squircle" class="on">Squircle</button>
+        <button data-v="circle">Circle</button>
+        <button data-v="pill">Pill</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="label">Palette presets</div>
+      <div class="palettes" id="palettes"></div>
+    </div>
+
+    <div class="group">
+      <div class="label">Colors</div>
+      <div class="row"><label>Body</label><input type="color" id="baseColor" value="#efe3cd"></div>
+      <div class="row" style="margin-top:6px"><label>Glyph</label><input type="color" id="glyphColor" value="#8a5a3b"></div>
+      <div class="row" style="margin-top:6px"><label>Backdrop</label><input type="color" id="bgColor" value="#e8c9b0"></div>
+    </div>
+
+    <div class="group">
+      <div class="label">Glyph</div>
+      <input type="text" id="glyphText" value="♥" maxlength="4" aria-label="Glyph character">
+      <div class="chips" id="chips"></div>
+      <div class="row" style="margin-top:10px"><label>Size</label>
+        <input type="range" id="glyphScale" min="25" max="75" value="46"><span class="val" id="glyphScaleV">46%</span></div>
+      <div class="row" style="margin-top:4px"><label>Finish</label></div>
+      <div class="seg" id="segGlyphStyle">
+        <button data-v="flocked" class="on">Flocked</button>
+        <button data-v="stitched">Stitched</button>
+        <button data-v="raised">Raised</button>
+      </div>
+      <details style="margin-top:10px">
+        <summary>Custom SVG path (advanced)</summary>
+        <p class="hint">Paste a single <code>d="…"</code> path (24×24 viewBox works best). Overrides the text glyph; clear to go back.</p>
+        <textarea id="svgPath" placeholder="M8 5v14l11-7z"></textarea>
+      </details>
+    </div>
+
+    <div class="group">
+      <div class="label">Fur</div>
+      <div class="row"><label>Length</label>
+        <input type="range" id="furLen" min="6" max="26" value="14"><span class="val" id="furLenV">14</span></div>
+      <div class="row" style="margin-top:4px"><label>Density</label>
+        <input type="range" id="density" min="40" max="160" value="100"><span class="val" id="densityV">1.0</span></div>
+    </div>
+
+    <div class="group">
+      <div class="label">Backdrop</div>
+      <div class="seg" id="segBg">
+        <button data-v="transparent">None</button>
+        <button data-v="solid">Solid</button>
+        <button data-v="bokeh" class="on">Bokeh</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="label">Seed</div>
+      <div class="row">
+        <input type="text" id="seed" value="72" style="width:90px;flex:0 0 90px" aria-label="Random seed">
+        <button class="btn" id="dice" title="New random seed">🎲 Shuffle</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="stage-wrap">
+    <div class="stage"><canvas id="preview" width="512" height="512"></canvas></div>
+    <div class="bar">
+      <select id="expSize" aria-label="Export size">
+        <option value="256">256 px</option>
+        <option value="512" selected>512 px (Play Store)</option>
+        <option value="1024">1024 px</option>
+      </select>
+      <button class="btn primary" id="download">Download PNG</button>
+      <span class="status" id="status"></span>
+    </div>
+    <p class="hint">Tip: Play Store icons must be full-bleed 512×512 — use the <b>Solid</b> or <b>Bokeh</b> backdrop for those, and <b>None</b> (transparent) for in-app UI icons.</p>
+  </div>
+</main>
+
+<div class="overlay" id="overlay" role="dialog" aria-label="Export result">
+  <div class="sheet">
+    <div class="label" id="sheetTitle">Your icon is ready</div>
+    <img id="exportImg" alt="Exported icon">
+    <p class="hint"><b>Right-click the image → “Save image as…”</b><br>
+      (on a phone: press and hold the image → Save). Some viewers block automatic downloads, so saving from the image always works.</p>
+    <div class="bar">
+      <a class="btn primary" id="saveLink" download="plush-icon.png">Try direct download</a>
+      <button class="btn" id="closeOverlay">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- state ---------- */
+const state = {
+  style:"fluffy", shape:"squircle", glyphStyle:"flocked", bg:"bokeh",
+  baseColor:"#efe3cd", glyphColor:"#8a5a3b", bgColor:"#e8c9b0",
+  glyphText:"♥", svgPath:"", glyphScale:46, furLen:14, density:1.0, seed:72
+};
+
+const PALETTES = [
+  {name:"Cozy Cream",  base:"#efe3cd", glyph:"#8a5a3b", bg:"#e8c9b0"},
+  {name:"Cocoa",       base:"#8a5030", glyph:"#f3e6d0", bg:"#e8c9b0"},
+  {name:"Sage",        base:"#7c8a63", glyph:"#f1ead6", bg:"#ded8c3"},
+  {name:"Forest",      base:"#1d4d33", glyph:"#eef5e6", bg:"#3a3d38"},
+  {name:"Pink Plush",  base:"#f2a7bc", glyph:"#7c2f45", bg:"#f6c9d6"},
+  {name:"Night Fur",   base:"#26221f", glyph:"#cfc8bd", bg:"#171412"},
+  {name:"Ivory Clay",  base:"#efe9dd", glyph:"#22201d", bg:"#ddd5c6"},
+  {name:"Denim",       base:"#3d4d7a", glyph:"#e9ecf5", bg:"#c9cfdd"}
+];
+const CHIPS = ["♥","★","♪","♫","☾","☀","✈","✉","☏","⌂","⚑","☂","✂","⌛","⏱","✿","☘","A","B","M"];
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+function hexToRgb(h){h=h.replace("#","");if(h.length===3)h=h.split("").map(c=>c+c).join("");
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function rgbToHsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+  let h=0,s=0;const l=(mx+mn)/2;if(mx!==mn){const d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+  switch(mx){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4;}h/=6;}
+  return [h,s,l];}
+function hslToRgb(h,s,l){h=((h%1)+1)%1;
+  const f=(n)=>{const k=(n+h*12)%12;const a=s*Math.min(l,1-l);
+  return l-a*Math.max(-1,Math.min(k-3,9-k,1));};
+  return [Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)];}
+/* shift lightness dl (-1..1), saturation ds */
+function shade(hex,dl,ds){const [r,g,b]=hexToRgb(hex);let [h,s,l]=rgbToHsl(r,g,b);
+  l=Math.max(0,Math.min(1,l+dl));s=Math.max(0,Math.min(1,s+(ds||0)));
+  const [r2,g2,b2]=hslToRgb(h,s,l);return `rgb(${r2},${g2},${b2})`;}
+function shadeA(hex,dl,a){const [r,g,b]=hexToRgb(hex);let [h,s,l]=rgbToHsl(r,g,b);
+  l=Math.max(0,Math.min(1,l+dl));const [r2,g2,b2]=hslToRgb(h,s,l);
+  return `rgba(${r2},${g2},${b2},${a})`;}
+
+/* ---------- shape ---------- */
+function shapePath(type,S){
+  const p=new Path2D(),c=S/2;
+  if(type==="circle"){p.arc(c,c,S*0.335,0,Math.PI*2);}
+  else if(type==="pill"){
+    const w=S*0.78,h=S*0.40,x=c-w/2,y=c-h/2,r=h/2;
+    p.moveTo(x+r,y);p.lineTo(x+w-r,y);p.arc(x+w-r,y+r,r,-Math.PI/2,Math.PI/2);
+    p.lineTo(x+r,y+h);p.arc(x+r,y+r,r,Math.PI/2,Math.PI*1.5);p.closePath();
+  }else{ /* squircle */
+    const w=S*0.70,x=c-w/2,y=c-w/2,r=w*0.34;
+    p.moveTo(x+r,y);p.lineTo(x+w-r,y);p.quadraticCurveTo(x+w,y,x+w,y+r);
+    p.lineTo(x+w,y+w-r);p.quadraticCurveTo(x+w,y+w,x+w-r,y+w);
+    p.lineTo(x+r,y+w);p.quadraticCurveTo(x,y+w,x,y+w-r);
+    p.lineTo(x,y+r);p.quadraticCurveTo(x,y,x+r,y);p.closePath();
+  }
+  return p;
+}
+/* boundary radius per angle via binary search (shapes are convex) */
+function boundaryRadii(ctx,path,S,n){
+  const c=S/2,out=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const a=i/n*Math.PI*2,dx=Math.cos(a),dy=Math.sin(a);
+    let lo=0,hi=S*0.62;
+    for(let k=0;k<9;k++){const m=(lo+hi)/2;
+      if(ctx.isPointInPath(path,c+dx*m,c+dy*m))lo=m;else hi=m;}
+    out[i]=lo;
+  }
+  return out;
+}
+
+/* ---------- glyph mask ---------- */
+function buildGlyphMask(S){
+  const m=document.createElement("canvas");m.width=S;m.height=S;
+  const g=m.getContext("2d");
+  const box=S*(state.glyphScale/100);
+  const d=state.svgPath.trim();
+  if(d){
+    let path;try{path=new Path2D(d);}catch(e){return null;}
+    /* measure raw bounds by test-draw */
+    const t=document.createElement("canvas");t.width=S;t.height=S;
+    const tc=t.getContext("2d");
+    tc.save();tc.translate(S*0.25,S*0.25);tc.scale(S/48,S/48);tc.fill(path);tc.restore();
+    const bb=alphaBBox(tc,S);if(!bb)return null;
+    const sc=box/Math.max(bb.w,bb.h);
+    g.save();
+    const k=(S/48)*sc;
+    g.translate(S/2,S/2);g.scale(k,k);
+    g.translate(-( (bb.x - S*0.25)/(S/48) + bb.w/(S/48)/2 ), -( (bb.y - S*0.25)/(S/48) + bb.h/(S/48)/2 ));
+    g.fill(path);g.restore();
+  }else{
+    const txt=(state.glyphText||"♥");
+    /* force text presentation where possible; use symbol-capable fonts */
+    g.font=`${Math.round(box*1.1)}px "Segoe UI Symbol","Segoe UI Emoji","Segoe UI",sans-serif`;
+    g.textAlign="center";g.textBaseline="middle";
+    g.fillStyle="#000";
+    g.fillText(txt+"︎",S/2,S/2+box*0.04);
+    let bb=alphaBBox(g,S);
+    if(!bb){g.fillText(txt,S/2,S/2+box*0.04);bb=alphaBBox(g,S);if(!bb)return null;}
+    /* rescale so the drawn glyph fits the box exactly, centered */
+    const sc=Math.min(box/bb.w,box/bb.h);
+    if(sc<0.92||sc>1.15){
+      const copy=document.createElement("canvas");copy.width=S;copy.height=S;
+      copy.getContext("2d").drawImage(m,0,0);
+      g.clearRect(0,0,S,S);g.save();
+      g.translate(S/2,S/2);g.scale(sc,sc);
+      g.translate(-(bb.x+bb.w/2),-(bb.y+bb.h/2));
+      g.drawImage(copy,0,0);g.restore();
+    }
+  }
+  const data=g.getImageData(0,0,S,S).data;
+  const alpha=new Uint8Array(S*S);
+  for(let i=0;i<S*S;i++)alpha[i]=data[i*4+3];
+  return {canvas:m,alpha,S};
+}
+function alphaBBox(ctx,S){
+  const d=ctx.getImageData(0,0,S,S).data;
+  let x0=S,y0=S,x1=-1,y1=-1;
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){
+    if(d[(y*S+x)*4+3]>20){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}}
+  if(x1<0)return null;
+  return {x:x0,y:y0,w:x1-x0+1,h:y1-y0+1};
+}
+function maskAt(mask,x,y){
+  const xi=x|0,yi=y|0;
+  if(xi<0||yi<0||xi>=mask.S||yi>=mask.S)return 0;
+  return mask.alpha[yi*mask.S+xi];
+}
+/* tint a mask canvas with a color, returns canvas */
+function tintMask(mask,color){
+  const t=document.createElement("canvas");t.width=mask.S;t.height=mask.S;
+  const g=t.getContext("2d");
+  g.drawImage(mask.canvas,0,0);
+  g.globalCompositeOperation="source-in";
+  g.fillStyle=color;g.fillRect(0,0,mask.S,mask.S);
+  return t;
+}
+
+/* ---------- fur engine ---------- */
+function furStroke(g,rng,x,y,ang,len,w,color){
+  const bend=(rng()-0.5)*len*0.9;
+  const mx=x+Math.cos(ang)*len*0.5+Math.cos(ang+Math.PI/2)*bend*0.5;
+  const my=y+Math.sin(ang)*len*0.5+Math.sin(ang+Math.PI/2)*bend*0.5;
+  const ex=x+Math.cos(ang)*len, ey=y+Math.sin(ang)*len;
+  g.strokeStyle=color;g.lineWidth=w;g.lineCap="round";
+  g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(mx,my,ex,ey);g.stroke();
+}
+function renderFurBody(g,S,rng,opts){
+  const {path,radii,base,furLen,density,felt}=opts;
+  const c=S/2,k=S/512;
+  const L=furLen*k*(felt?0.45:1);
+  const ph1=rng()*6.28, ph2=rng()*6.28;
+  /* clumped fur flow: points outward at the rim, swirls in the middle */
+  const flowAng=(x,y,f)=>{
+    const outw=Math.atan2(y-c,x-c);
+    const swirl=Math.sin(x*0.02/k+ph1)+Math.cos(y*0.017/k+ph2);
+    const eb=Math.min(1,f*f)*0.75;
+    return outw*eb+swirl*1.1*(1-eb)+(rng()-0.5)*0.7;
+  };
+  const sample=()=>{
+    const a=rng()*Math.PI*2;
+    const ri=Math.floor(a/(Math.PI*2)*radii.length)%radii.length;
+    const rMax=radii[ri];
+    const r=Math.sqrt(rng())*rMax;
+    return {x:c+Math.cos(a)*r,y:c+Math.sin(a)*r,f:rMax>0?r/rMax:0};
+  };
+  /* dense under-layer at half resolution, upscaled for velvet softness */
+  const hc=document.createElement("canvas");hc.width=S/2;hc.height=S/2;
+  const hg=hc.getContext("2d");
+  hg.setTransform(0.5,0,0,0.5,0,0);
+  const bgr=hg.createRadialGradient(c,c*0.92,S*0.05,c,c,S*0.44);
+  bgr.addColorStop(0,shade(base,+0.03));bgr.addColorStop(1,shade(base,-0.10));
+  hg.fillStyle=bgr;hg.fill(path);
+  const passes=[
+    {n:9000,dl:-0.10,a:0.45,len:1.15,w:2.6},   /* underfur */
+    {n:9000,dl:+0.02,a:0.45,len:0.95,w:2.2}    /* coat     */
+  ];
+  for(const p of passes){
+    const n=Math.round(p.n*density);
+    for(let i=0;i<n;i++){
+      const s=sample();
+      furStroke(hg,rng,s.x,s.y,flowAng(s.x,s.y,s.f),L*p.len*(0.6+rng()*0.7),p.w*k,
+        shadeA(base,p.dl+(rng()-0.5)*0.07,p.a));
+    }
+  }
+  g.drawImage(hc,0,0,S,S);
+  /* crisp top coat at full resolution */
+  const top=Math.round((felt?9500:6500)*density);
+  for(let i=0;i<top;i++){
+    const s=sample();
+    furStroke(g,rng,s.x,s.y,flowAng(s.x,s.y,s.f),L*(0.5+rng()*0.5),1.3*k,
+      shadeA(base,0.04+(rng()-0.4)*0.14,0.5));
+  }
+  /* edge halo — short dense fluff, not spikes */
+  const fr=Math.round(2600*density);
+  for(let i=0;i<fr;i++){
+    const a=rng()*Math.PI*2;
+    const ri=Math.floor(a/(Math.PI*2)*radii.length)%radii.length;
+    const r=radii[ri]-rng()*2*k;
+    const x=c+Math.cos(a)*r,y=c+Math.sin(a)*r;
+    const ang=a+(rng()-0.5)*0.6;
+    furStroke(g,rng,x,y,ang,L*(0.35+rng()*0.45),1.2*k,
+      shadeA(base,0.02+(rng()-0.5)*0.10,0.5));
+  }
+  if(felt){ /* speckle */
+    for(let i=0;i<4000*density*k*k;i++){
+      const a=rng()*Math.PI*2;
+      const ri=Math.floor(a/(Math.PI*2)*radii.length)%radii.length;
+      const r=Math.sqrt(rng())*radii[ri];
+      g.fillStyle=shadeA(base,(rng()-0.5)*0.3,0.15);
+      g.fillRect(c+Math.cos(a)*r,c+Math.sin(a)*r,1.2*k,1.2*k);
+    }
+  }
+}
+function applyLighting(g,S){
+  g.globalCompositeOperation="source-atop";
+  let gr=g.createRadialGradient(S*0.36,S*0.30,S*0.05,S*0.36,S*0.30,S*0.75);
+  gr.addColorStop(0,"rgba(255,252,240,0.34)");gr.addColorStop(1,"rgba(255,252,240,0)");
+  g.fillStyle=gr;g.fillRect(0,0,S,S);
+  gr=g.createRadialGradient(S*0.5,S*0.5,S*0.18,S*0.5,S*0.55,S*0.62);
+  gr.addColorStop(0,"rgba(40,20,8,0)");gr.addColorStop(1,"rgba(40,20,8,0.32)");
+  g.fillStyle=gr;g.fillRect(0,0,S,S);
+  g.globalCompositeOperation="source-over";
+}
+
+/* ---------- glyph finishes ---------- */
+function drawGlyphFlocked(g,S,rng,mask,color,furLen,density){
+  const k=S/512,L=furLen*k*0.45;
+  const bb=alphaBBox(mask.canvas.getContext("2d"),S)||{x:0,y:0,w:S,h:S};
+  /* pressed-in shadow so the patch nests into the coat */
+  g.save();g.filter=`blur(${4*k}px)`;g.globalAlpha=0.30;
+  g.drawImage(tintMask(mask,"rgb(40,20,8)"),1.5*k,3*k);
+  g.restore();
+  /* solid soft core so the body colour never shows through the fur */
+  g.save();g.filter=`blur(${3*k}px)`;g.globalAlpha=0.75;
+  g.drawImage(tintMask(mask,shade(color,-0.05)),0,0);
+  g.restore();
+  const N=Math.round(bb.w*bb.h/(S*S)*60000*density);
+  const passes=[
+    {dl:-0.08,a:0.5,len:1.0 ,w:2.2},
+    {dl:+0.03,a:0.5,len:0.8 ,w:1.8},
+    {dl:+0.12,a:0.5,len:0.55,w:1.2}
+  ];
+  for(const p of passes){
+    for(let i=0;i<N/3;i++){
+      const x=bb.x+rng()*bb.w, y=bb.y+rng()*bb.h;
+      if(maskAt(mask,x,y)<110)continue;
+      furStroke(g,rng,x,y,rng()*Math.PI*2,L*p.len*(0.6+rng()*0.6),p.w*k,
+        shadeA(color,p.dl+(rng()-0.5)*0.07,p.a));
+    }
+  }
+  /* stray hairs past the silhouette keep the edge fuzzy, not stamped */
+  for(let i=0;i<N*0.12;i++){
+    const x=bb.x+rng()*bb.w, y=bb.y+rng()*bb.h;
+    if(maskAt(mask,x,y)<110)continue;
+    if(maskAt(mask,x+4*k,y)>110&&maskAt(mask,x-4*k,y)>110&&
+       maskAt(mask,x,y+4*k)>110&&maskAt(mask,x,y-4*k)>110)continue;
+    furStroke(g,rng,x,y,rng()*Math.PI*2,L*(0.8+rng()*0.6),1.4*k,
+      shadeA(color,(rng()-0.5)*0.10,0.55));
+  }
+}
+function drawGlyphStitched(g,S,rng,mask,color){
+  const k=S/512;
+  /* soft indent shadow under the stitching */
+  g.save();g.globalAlpha=0.30;
+  g.drawImage(tintMask(mask,"rgba(30,15,5,1)"),1.5*k,2.5*k);
+  g.restore();
+  const step=3*k,ang=-Math.PI/4,len=4.2*k;
+  const bb=alphaBBox(mask.canvas.getContext("2d"),S)||{x:0,y:0,w:S,h:S};
+  for(let y=bb.y;y<bb.y+bb.h;y+=step){
+    for(let x=bb.x;x<bb.x+bb.w;x+=step){
+      const jx=x+(rng()-0.5)*step, jy=y+(rng()-0.5)*step;
+      if(maskAt(mask,jx,jy)<110)continue;
+      const a=ang+(rng()-0.5)*0.25, l=len*(0.8+rng()*0.5);
+      g.strokeStyle=shadeA(color,(rng()-0.5)*0.12,0.9);
+      g.lineWidth=1.6*k;g.lineCap="round";
+      g.beginPath();
+      g.moveTo(jx-Math.cos(a)*l/2,jy-Math.sin(a)*l/2);
+      g.lineTo(jx+Math.cos(a)*l/2,jy+Math.sin(a)*l/2);
+      g.stroke();
+    }
+  }
+}
+function drawGlyphRaised(g,S,rng,mask,color){
+  const k=S/512;
+  /* drop shadow */
+  g.save();g.globalAlpha=0.35;
+  g.drawImage(tintMask(mask,"rgb(30,15,5)"),0,3.5*k);g.restore();
+  /* highlight rim (peeks out above) */
+  g.save();g.globalAlpha=0.9;
+  g.drawImage(tintMask(mask,shade(color,+0.28)),0,-2*k);g.restore();
+  /* body */
+  g.drawImage(tintMask(mask,color),0,0);
+  /* subtle top-lit gradient inside glyph */
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  const tg=t.getContext("2d");
+  tg.drawImage(mask.canvas,0,0);
+  tg.globalCompositeOperation="source-in";
+  const gr=tg.createLinearGradient(0,S*0.25,0,S*0.75);
+  gr.addColorStop(0,"rgba(255,255,255,0.25)");gr.addColorStop(1,"rgba(40,20,10,0.18)");
+  tg.fillStyle=gr;tg.fillRect(0,0,S,S);
+  g.drawImage(t,0,0);
+}
+
+/* ---------- clay body ---------- */
+function renderClayBody(g,S,path,base){
+  const c=S/2;
+  g.save();
+  g.shadowColor="rgba(40,25,10,0.30)";g.shadowBlur=S*0.03;g.shadowOffsetY=S*0.012;
+  const gr=g.createLinearGradient(0,c-S*0.35,0,c+S*0.35);
+  gr.addColorStop(0,shade(base,+0.07));gr.addColorStop(1,shade(base,-0.06));
+  g.fillStyle=gr;g.fill(path);
+  g.restore();
+  /* inner bottom shade + top sheen */
+  g.save();g.clip(path);
+  let rg=g.createRadialGradient(c,c+S*0.1,S*0.1,c,c+S*0.15,S*0.42);
+  rg.addColorStop(0,"rgba(40,25,10,0)");rg.addColorStop(1,"rgba(40,25,10,0.16)");
+  g.fillStyle=rg;g.fillRect(0,0,S,S);
+  rg=g.createRadialGradient(c-S*0.12,c-S*0.16,S*0.02,c-S*0.12,c-S*0.16,S*0.4);
+  rg.addColorStop(0,"rgba(255,255,250,0.35)");rg.addColorStop(1,"rgba(255,255,250,0)");
+  g.fillStyle=rg;g.fillRect(0,0,S,S);
+  g.restore();
+}
+
+/* ---------- backgrounds ---------- */
+function renderBackground(g,S,rng){
+  if(state.bg==="transparent")return;
+  const bg=state.bgColor;
+  if(state.bg==="solid"){g.fillStyle=bg;g.fillRect(0,0,S,S);return;}
+  /* bokeh */
+  const gr=g.createLinearGradient(0,0,0,S);
+  gr.addColorStop(0,shade(bg,+0.06));gr.addColorStop(1,shade(bg,-0.05));
+  g.fillStyle=gr;g.fillRect(0,0,S,S);
+  for(let i=0;i<10;i++){
+    const x=rng()*S,y=rng()*S,r=S*(0.04+rng()*0.10);
+    const b=g.createRadialGradient(x,y,0,x,y,r);
+    b.addColorStop(0,shadeA(bg,+0.10,0.35));b.addColorStop(1,shadeA(bg,+0.10,0));
+    g.fillStyle=b;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();
+  }
+}
+
+/* ---------- main render ---------- */
+function renderIcon(ctx,S){
+  const rng=mulberry32(state.seed>>>0 || 1);
+  ctx.clearRect(0,0,S,S);
+  renderBackground(ctx,S,rng);
+
+  /* ambient contact shadow */
+  if(state.bg!=="transparent"){
+    ctx.save();
+    ctx.translate(S/2,S/2+S*0.30);
+    ctx.scale(1,0.35);
+    const sg=ctx.createRadialGradient(0,0,0,0,0,S*0.30);
+    sg.addColorStop(0,"rgba(40,20,8,0.28)");sg.addColorStop(1,"rgba(40,20,8,0)");
+    ctx.fillStyle=sg;
+    ctx.beginPath();ctx.arc(0,0,S*0.30,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+
+  /* body on offscreen so lighting composites only onto it */
+  const off=document.createElement("canvas");off.width=S;off.height=S;
+  const g=off.getContext("2d");
+  const path=shapePath(state.shape,S);
+  const radii=boundaryRadii(g,path,S,180);
+
+  if(state.style==="clay"){
+    renderClayBody(g,S,path,state.baseColor);
+  }else{
+    renderFurBody(g,S,rng,{path,radii,base:state.baseColor,
+      furLen:state.furLen,density:state.density,felt:state.style==="felt"});
+    applyLighting(g,S);
+  }
+
+  /* glyph */
+  const mask=buildGlyphMask(S);
+  if(mask){
+    if(state.style==="clay"&&state.glyphStyle==="flocked"){
+      drawGlyphRaised(g,S,rng,mask,state.glyphColor); /* flocked reads poorly on clay */
+    }else if(state.glyphStyle==="flocked"){
+      drawGlyphFlocked(g,S,rng,mask,state.glyphColor,state.furLen,state.density);
+    }else if(state.glyphStyle==="stitched"){
+      drawGlyphStitched(g,S,rng,mask,state.glyphColor);
+    }else{
+      drawGlyphRaised(g,S,rng,mask,state.glyphColor);
+    }
+  }
+  ctx.drawImage(off,0,0);
+}
+
+/* ---------- UI wiring ---------- */
+const preview=$("preview"),pctx=preview.getContext("2d");
+let pending=null;
+function requestRender(){
+  $("status").textContent="rendering…";
+  if(pending)cancelAnimationFrame(pending);
+  pending=requestAnimationFrame(()=>{
+    const t0=performance.now();
+    renderIcon(pctx,512);
+    $("status").textContent=`seed ${state.seed} · ${(performance.now()-t0).toFixed(0)} ms`;
+    pending=null;
+  });
+}
+function seg(id,key){
+  $(id).addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    $(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    state[key]=b.dataset.v;requestRender();
+  });
+}
+seg("segStyle","style");seg("segShape","shape");
+seg("segGlyphStyle","glyphStyle");seg("segBg","bg");
+
+[["baseColor","baseColor"],["glyphColor","glyphColor"],["bgColor","bgColor"]].forEach(([id,key])=>{
+  $(id).addEventListener("input",e=>{state[key]=e.target.value;requestRender();});
+});
+$("glyphText").addEventListener("input",e=>{state.glyphText=e.target.value;requestRender();});
+$("svgPath").addEventListener("input",e=>{state.svgPath=e.target.value;requestRender();});
+$("glyphScale").addEventListener("input",e=>{state.glyphScale=+e.target.value;
+  $("glyphScaleV").textContent=e.target.value+"%";requestRender();});
+$("furLen").addEventListener("input",e=>{state.furLen=+e.target.value;
+  $("furLenV").textContent=e.target.value;requestRender();});
+$("density").addEventListener("input",e=>{state.density=+e.target.value/100;
+  $("densityV").textContent=(+e.target.value/100).toFixed(1);requestRender();});
+$("seed").addEventListener("input",e=>{state.seed=parseInt(e.target.value,10)||1;requestRender();});
+$("dice").addEventListener("click",()=>{
+  state.seed=Math.floor(Math.random()*99999);
+  $("seed").value=state.seed;requestRender();
+});
+
+/* palette buttons */
+PALETTES.forEach(p=>{
+  const b=document.createElement("button");b.className="pal";b.title=p.name;
+  b.setAttribute("aria-label","Palette "+p.name);
+  [p.base,p.glyph,p.bg].forEach(cl=>{
+    const s=document.createElement("span");s.style.background=cl;b.appendChild(s);
+  });
+  b.addEventListener("click",()=>{
+    state.baseColor=p.base;state.glyphColor=p.glyph;state.bgColor=p.bg;
+    $("baseColor").value=p.base;$("glyphColor").value=p.glyph;$("bgColor").value=p.bg;
+    requestRender();
+  });
+  $("palettes").appendChild(b);
+});
+/* glyph chips */
+CHIPS.forEach(ch=>{
+  const b=document.createElement("button");b.textContent=ch;
+  b.addEventListener("click",()=>{state.glyphText=ch;$("glyphText").value=ch;
+    state.svgPath="";$("svgPath").value="";requestRender();});
+  $("chips").appendChild(b);
+});
+
+/* export — show result in an overlay (sandboxed viewers block automatic
+   downloads, but right-click/long-press "save image" always works) */
+$("download").addEventListener("click",()=>{
+  const S=+$("expSize").value;
+  $("status").textContent=`exporting ${S}px…`;
+  setTimeout(()=>{
+    const c=document.createElement("canvas");c.width=S;c.height=S;
+    renderIcon(c.getContext("2d"),S);
+    const url=c.toDataURL("image/png");
+    const name=(state.glyphText||"icon").replace(/[^\w]/g,"")||"icon";
+    const file=`plush-${state.style}-${name}-${S}.png`;
+    $("exportImg").src=url;
+    $("sheetTitle").textContent=`${S} × ${S} px — ${file}`;
+    const a=$("saveLink");a.href=url;a.download=file;
+    $("overlay").classList.add("open");
+    $("status").textContent=`rendered ${S}×${S}`;
+  },30);
+});
+$("closeOverlay").addEventListener("click",()=>$("overlay").classList.remove("open"));
+$("overlay").addEventListener("click",e=>{if(e.target.id==="overlay")$("overlay").classList.remove("open");});
+
+requestRender();
+</script>
