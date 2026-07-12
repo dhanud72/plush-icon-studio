@@ -92,19 +92,35 @@
 
 <header>
   <div class="wordmark">Plush Icon Studio</div>
-  <div class="tagline">procedural fluffy · felt · clay app icons — no AI image credits needed</div>
+  <div class="tagline">procedural vivid-glass · fluffy · felt · clay · jelly app icons — no AI image credits needed</div>
 </header>
 
 <main>
   <aside>
     <div class="group">
+      <div class="label">Colors — pick freely</div>
+      <div class="row"><label>Color A (top)</label><input type="color" id="baseColor" value="#f7b733"></div>
+      <div class="row" style="margin-top:6px"><label>Color B (middle)</label><input type="color" id="colorB" value="#fc4a67"></div>
+      <div class="row" style="margin-top:6px"><label>Color C (bottom)</label><input type="color" id="colorC" value="#8b5cf6"></div>
+      <div class="row" style="margin-top:6px"><label>Glyph</label><input type="color" id="glyphColor" value="#ffffff"></div>
+      <div class="row" style="margin-top:6px"><label>Backdrop</label><input type="color" id="bgColor" value="#cfcbe0"></div>
+      <p class="hint" style="margin:8px 0 0">Vivid, Glass and Jelly blend A→B→C. Fur, felt and clay use Color A.</p>
+    </div>
+
+    <div class="group">
+      <div class="label">Palette presets (optional)</div>
+      <div class="palettes" id="palettes"></div>
+    </div>
+
+    <div class="group">
       <div class="label">Material</div>
       <div class="seg" id="segStyle">
-        <button data-v="fluffy" class="on">Fluffy</button>
-        <button data-v="felt">Felt</button>
-        <button data-v="clay">Clay</button>
+        <button data-v="vividglass" class="on">Vivid</button>
         <button data-v="glass">Glass</button>
         <button data-v="jelly">Jelly</button>
+        <button data-v="fluffy">Fluffy</button>
+        <button data-v="felt">Felt</button>
+        <button data-v="clay">Clay</button>
         <button data-v="furglass">Fur+Glass</button>
       </div>
     </div>
@@ -119,20 +135,8 @@
     </div>
 
     <div class="group">
-      <div class="label">Palette presets</div>
-      <div class="palettes" id="palettes"></div>
-    </div>
-
-    <div class="group">
-      <div class="label">Colors</div>
-      <div class="row"><label>Body</label><input type="color" id="baseColor" value="#efe3cd"></div>
-      <div class="row" style="margin-top:6px"><label>Glyph</label><input type="color" id="glyphColor" value="#8a5a3b"></div>
-      <div class="row" style="margin-top:6px"><label>Backdrop</label><input type="color" id="bgColor" value="#e8c9b0"></div>
-    </div>
-
-    <div class="group">
       <div class="label">Glyph</div>
-      <input type="text" id="glyphText" value="♥" maxlength="4" aria-label="Glyph character">
+      <input type="text" id="glyphText" value="☁" maxlength="4" aria-label="Glyph character">
       <div class="chips" id="chips"></div>
       <div class="row" style="margin-top:10px">
         <label>Or upload</label>
@@ -145,7 +149,8 @@
         <input type="range" id="glyphScale" min="25" max="75" value="46"><span class="val" id="glyphScaleV">46%</span></div>
       <div class="row" style="margin-top:4px"><label>Finish</label></div>
       <div class="seg" id="segGlyphStyle">
-        <button data-v="flocked" class="on">Flocked</button>
+        <button data-v="frosted" class="on">Frosted</button>
+        <button data-v="flocked">Flocked</button>
         <button data-v="stitched">Stitched</button>
         <button data-v="raised">Raised</button>
       </div>
@@ -168,8 +173,8 @@
       <div class="label">Backdrop</div>
       <div class="seg" id="segBg">
         <button data-v="transparent">None</button>
-        <button data-v="solid">Solid</button>
-        <button data-v="bokeh" class="on">Bokeh</button>
+        <button data-v="solid" class="on">Solid</button>
+        <button data-v="bokeh">Bokeh</button>
         <button data-v="aurora">Aurora</button>
       </div>
     </div>
@@ -218,13 +223,18 @@
 "use strict";
 /* ---------- state ---------- */
 const state = {
-  style:"fluffy", shape:"squircle", glyphStyle:"flocked", bg:"bokeh",
-  baseColor:"#efe3cd", glyphColor:"#8a5a3b", bgColor:"#e8c9b0",
-  glyphText:"♥", svgPath:"", glyphScale:46, furLen:14, density:1.0, seed:72,
+  style:"vividglass", shape:"squircle", glyphStyle:"frosted", bg:"solid",
+  baseColor:"#f7b733", colorB:"#fc4a67", colorC:"#8b5cf6",
+  glyphColor:"#ffffff", bgColor:"#cfcbe0",
+  glyphText:"☁", svgPath:"", glyphScale:46, furLen:14, density:1.0, seed:72,
   uploadImg:null, uploadId:0
 };
 
 const PALETTES = [
+  {name:"Sunrise",     base:"#f7b733", b:"#fc4a67", c:"#8b5cf6", glyph:"#ffffff", bg:"#cfcbe0"},
+  {name:"Ocean",       base:"#5de0c0", b:"#4aa3f0", c:"#9b5de5", glyph:"#ffffff", bg:"#c8d4e8"},
+  {name:"Sunset Wave", base:"#ffd166", b:"#ef476f", c:"#5f4bb6", glyph:"#fff5e8", bg:"#d8cfe8"},
+  {name:"Candy Sky",   base:"#ffb7e0", b:"#a685e2", c:"#6cd4ff", glyph:"#ffffff", bg:"#e3dcf0"},
   {name:"Cozy Cream",  base:"#efe3cd", glyph:"#8a5a3b", bg:"#e8c9b0"},
   {name:"Cocoa",       base:"#8a5030", glyph:"#f3e6d0", bg:"#e8c9b0"},
   {name:"Sage",        base:"#7c8a63", glyph:"#f1ead6", bg:"#ded8c3"},
@@ -240,7 +250,7 @@ const PALETTES = [
   {name:"Candy",       base:"#bfa9e6", glyph:"#6a4a9e", bg:"#e9d9ec"},
   {name:"Ice",         base:"#dfe9f2", glyph:"#2f4256", bg:"#aebfd2"}
 ];
-const CHIPS = ["♥","★","♪","♫","☾","☀","✈","✉","☏","⌂","⚑","☂","✂","⌛","⏱","✿","☘","A","B","M"];
+const CHIPS = ["☁","♥","★","♪","♫","☾","☀","✈","✉","☏","⌂","⚑","☂","✂","⌛","⏱","✿","☘","A","B","M"];
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -263,6 +273,11 @@ function shade(hex,dl,ds){const [r,g,b]=hexToRgb(hex);let [h,s,l]=rgbToHsl(r,g,b
 function shadeA(hex,dl,a){const [r,g,b]=hexToRgb(hex);let [h,s,l]=rgbToHsl(r,g,b);
   l=Math.max(0,Math.min(1,l+dl));const [r2,g2,b2]=hslToRgb(h,s,l);
   return `rgba(${r2},${g2},${b2},${a})`;}
+/* hue/sat/light-shifted hex (for deriving B/C when a preset has none) */
+function hexShift(hex,dh,ds,dl){const [r,g,b]=hexToRgb(hex);let [h,s,l]=rgbToHsl(r,g,b);
+  s=Math.max(0,Math.min(1,s+ds));l=Math.max(0,Math.min(1,l+dl));
+  const [r2,g2,b2]=hslToRgb(h+dh,s,l);
+  return "#"+[r2,g2,b2].map(v=>v.toString(16).padStart(2,"0")).join("");}
 
 /* ---------- shape ---------- */
 function shapePath(type,S){
@@ -545,6 +560,21 @@ function drawGlyphStitched(g,S,rng,mask,color){
     }
   }
 }
+/* soft translucent shape, like frosted glass clouds */
+function drawGlyphFrosted(g,S,rng,mask,color){
+  const k=S/512;
+  g.save();g.filter=`blur(${5*k}px)`;g.globalAlpha=0.30;
+  g.drawImage(tintMask(mask,"rgb(60,40,100)"),2*k,4*k);g.restore();
+  g.save();g.filter=`blur(${0.6*k}px)`;g.globalAlpha=0.95;
+  g.drawImage(tintMask(mask,color),0,0);g.restore();
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  const tg=t.getContext("2d");
+  tg.drawImage(mask.canvas,0,0);tg.globalCompositeOperation="source-in";
+  const gr=tg.createLinearGradient(0,S*0.30,0,S*0.70);
+  gr.addColorStop(0,"rgba(255,255,255,0.50)");gr.addColorStop(1,"rgba(255,255,255,0)");
+  tg.fillStyle=gr;tg.fillRect(0,0,S,S);
+  g.drawImage(t,0,0);
+}
 function drawGlyphRaised(g,S,rng,mask,color){
   const k=S/512;
   /* drop shadow */
@@ -573,25 +603,25 @@ function shapeMetrics(type,S){
   if(type==="pill"){const w=S*0.78,h=S*0.40;return{x:c-w/2,y:c-h/2,w,h};}
   const w=S*0.70;return{x:c-w/2,y:c-w/2,w,h:w};
 }
-function renderGlassBody(g,S,path,base,mode,shape){
+function renderGlassBody(g,S,path,cA,cB,cC,mode,shape){
   const k=S/512,m=shapeMetrics(shape,S);
   /* soft drop shadow + body tint */
   g.save();
   g.shadowColor="rgba(25,18,35,0.35)";g.shadowBlur=S*0.035;g.shadowOffsetY=S*0.02;
-  g.fillStyle=mode==="jelly"?shadeA(base,0,0.92):shadeA(base,+0.04,0.35);
+  g.fillStyle=mode==="jelly"?shadeA(cB,0,0.92):shadeA(cB,+0.04,0.35);
   g.fill(path);
   g.restore();
   g.save();g.clip(path);
-  /* vertical depth tint */
+  /* vertical depth tint blending the three chosen colours */
   let lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
   if(mode==="jelly"){
-    lg.addColorStop(0,shadeA(base,+0.14,0.95));
-    lg.addColorStop(0.55,shadeA(base,+0.02,0.25));
-    lg.addColorStop(1,shadeA(base,-0.14,0.80));
+    lg.addColorStop(0,shadeA(cA,+0.10,0.95));
+    lg.addColorStop(0.55,shadeA(cB,+0.02,0.55));
+    lg.addColorStop(1,shadeA(cC,-0.08,0.85));
   }else{
-    lg.addColorStop(0,shadeA(base,+0.18,0.30));
-    lg.addColorStop(0.6,shadeA(base,+0.05,0.05));
-    lg.addColorStop(1,shadeA(base,-0.08,0.35));
+    lg.addColorStop(0,shadeA(cA,+0.12,0.35));
+    lg.addColorStop(0.6,shadeA(cB,+0.05,0.15));
+    lg.addColorStop(1,shadeA(cC,-0.05,0.40));
   }
   g.fillStyle=lg;g.fillRect(0,0,S,S);
   /* light pooling at the bottom (refraction) */
@@ -615,6 +645,56 @@ function renderGlassBody(g,S,path,base,mode,shape){
   g.beginPath();g.ellipse(m.x+m.w*0.22,m.y+m.h*0.16,7*k,4*k,-0.5,0,Math.PI*2);g.fill();
   g.beginPath();g.ellipse(m.x+m.w*0.80,m.y+m.h*0.13,4*k,2.5*k,0.4,0,Math.PI*2);g.fill();
   g.filter="none";
+  g.restore();
+}
+/* vivid gradient glass — tri-colour body, wave layers, thick luminous rim */
+function renderVividGlass(g,S,rng,path,shape,cA,cB,cC){
+  const k=S/512,m=shapeMetrics(shape,S);
+  /* deep soft shadow */
+  g.save();
+  g.shadowColor="rgba(60,40,100,0.45)";g.shadowBlur=S*0.05;g.shadowOffsetY=S*0.028;
+  g.fillStyle=cB;g.fill(path);
+  g.restore();
+  g.save();g.clip(path);
+  /* vivid tri-colour gradient, slightly diagonal */
+  let lg=g.createLinearGradient(m.x+m.w*0.15,m.y,m.x+m.w*0.55,m.y+m.h);
+  lg.addColorStop(0,cA);lg.addColorStop(0.5,cB);lg.addColorStop(1,cC);
+  g.fillStyle=lg;g.fillRect(0,0,S,S);
+  /* luminous core */
+  const rg=g.createRadialGradient(m.x+m.w*0.42,m.y+m.h*0.30,S*0.02,
+                                  m.x+m.w*0.42,m.y+m.h*0.30,m.w*0.70);
+  rg.addColorStop(0,"rgba(255,255,255,0.30)");rg.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=rg;g.fillRect(0,0,S,S);
+  /* translucent wave layers */
+  const waves=[
+    {y:0.52,amp:0.050,a1:"rgba(255,255,255,0.40)",a2:"rgba(255,255,255,0.06)"},
+    {y:0.66,amp:0.060,a1:shadeA(cB,+0.10,0.45),   a2:shadeA(cC,+0.05,0.10)},
+    {y:0.80,amp:0.045,a1:"rgba(255,255,255,0.30)",a2:"rgba(255,255,255,0.04)"}
+  ];
+  for(const wv of waves){
+    const ph=rng()*Math.PI*2,yb=m.y+m.h*wv.y,amp=m.h*wv.amp;
+    g.beginPath();g.moveTo(m.x-10*k,yb);
+    for(let x=m.x-10*k;x<=m.x+m.w+10*k;x+=6*k)
+      g.lineTo(x,yb+Math.sin(x/(m.w*0.28)+ph)*amp);
+    g.lineTo(m.x+m.w+10*k,m.y+m.h+10*k);
+    g.lineTo(m.x-10*k,m.y+m.h+10*k);g.closePath();
+    const wg=g.createLinearGradient(0,yb-amp,0,m.y+m.h);
+    wg.addColorStop(0,wv.a1);wg.addColorStop(1,wv.a2);
+    g.fillStyle=wg;g.fill();
+  }
+  /* glass thickness: broad inner glow + crisp double rim */
+  g.strokeStyle="rgba(255,255,255,0.16)";g.lineWidth=12*k;g.stroke(path);
+  lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
+  lg.addColorStop(0,"rgba(255,255,255,0.95)");
+  lg.addColorStop(0.3,"rgba(255,255,255,0.25)");
+  lg.addColorStop(0.75,"rgba(255,255,255,0.25)");
+  lg.addColorStop(1,"rgba(255,255,255,0.85)");
+  g.strokeStyle=lg;g.lineWidth=3.5*k;g.stroke(path);
+  /* top sheen */
+  lg=g.createLinearGradient(0,m.y+m.h*0.03,0,m.y+m.h*0.20);
+  lg.addColorStop(0,"rgba(255,255,255,0.55)");lg.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=lg;
+  g.beginPath();g.ellipse(m.x+m.w/2,m.y+m.h*0.11,m.w*0.44,m.h*0.09,0,0,Math.PI*2);g.fill();
   g.restore();
 }
 /* glass case over a fur body */
@@ -715,8 +795,10 @@ function renderIcon(ctx,S){
 
   if(state.style==="clay"){
     renderClayBody(g,S,path,state.baseColor);
+  }else if(state.style==="vividglass"){
+    renderVividGlass(g,S,rng,path,state.shape,state.baseColor,state.colorB,state.colorC);
   }else if(state.style==="glass"||state.style==="jelly"){
-    renderGlassBody(g,S,path,state.baseColor,state.style,state.shape);
+    renderGlassBody(g,S,path,state.baseColor,state.colorB,state.colorC,state.style,state.shape);
   }else{
     const contained=state.style==="furglass";
     renderFurBody(g,S,rng,{path,radii,base:state.baseColor,
@@ -729,7 +811,9 @@ function renderIcon(ctx,S){
   /* glyph */
   const mask=buildGlyphMask(S);
   if(mask){
-    if(["clay","glass","jelly"].includes(state.style)&&state.glyphStyle==="flocked"){
+    if(state.glyphStyle==="frosted"){
+      drawGlyphFrosted(g,S,rng,mask,state.glyphColor);
+    }else if(["clay","glass","jelly","vividglass"].includes(state.style)&&state.glyphStyle==="flocked"){
       drawGlyphRaised(g,S,rng,mask,state.glyphColor); /* flocked reads poorly on smooth bodies */
     }else if(state.glyphStyle==="flocked"){
       drawGlyphFlocked(g,S,rng,mask,state.glyphColor,state.furLen,state.density);
@@ -771,7 +855,8 @@ function seg(id,key){
 seg("segStyle","style");seg("segShape","shape");
 seg("segGlyphStyle","glyphStyle");seg("segBg","bg");
 
-[["baseColor","baseColor"],["glyphColor","glyphColor"],["bgColor","bgColor"]].forEach(([id,key])=>{
+[["baseColor","baseColor"],["colorB","colorB"],["colorC","colorC"],
+ ["glyphColor","glyphColor"],["bgColor","bgColor"]].forEach(([id,key])=>{
   $(id).addEventListener("input",e=>{state[key]=e.target.value;requestRender();});
 });
 function dropUpload(){
@@ -808,12 +893,15 @@ $("dice").addEventListener("click",()=>{
 PALETTES.forEach(p=>{
   const b=document.createElement("button");b.className="pal";b.title=p.name;
   b.setAttribute("aria-label","Palette "+p.name);
-  [p.base,p.glyph,p.bg].forEach(cl=>{
+  [p.base,p.b||p.glyph,p.c||p.bg].forEach(cl=>{
     const s=document.createElement("span");s.style.background=cl;b.appendChild(s);
   });
   b.addEventListener("click",()=>{
     state.baseColor=p.base;state.glyphColor=p.glyph;state.bgColor=p.bg;
+    state.colorB=p.b||hexShift(p.base,0.06,0,-0.04);
+    state.colorC=p.c||hexShift(p.base,0.13,0,-0.08);
     $("baseColor").value=p.base;$("glyphColor").value=p.glyph;$("bgColor").value=p.bg;
+    $("colorB").value=state.colorB;$("colorC").value=state.colorC;
     requestRender(true);
   });
   $("palettes").appendChild(b);
