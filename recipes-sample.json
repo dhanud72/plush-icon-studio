@@ -1,0 +1,11 @@
+{
+  "comment": "Demo recipe set — Hourglass fasting app, cozy cream felt brand",
+  "items": [
+    { "name": "app_icon",   "style": "felt", "shape": "squircle", "colors": ["#efe3cd"], "glyphColor": "#8a5a3b", "glyph": "⌛", "glyphStyle": "flocked", "bg": "solid", "bgColor": "#e8c9b0", "seed": 11, "size": 512 },
+    { "name": "ic_timer",   "style": "felt", "shape": "circle",   "colors": ["#efe3cd"], "glyphColor": "#8a5a3b", "glyph": "⏱", "glyphStyle": "flocked", "bg": "transparent", "seed": 12, "size": 256 },
+    { "name": "ic_night",   "style": "felt", "shape": "circle",   "colors": ["#8a5030"], "glyphColor": "#f3e6d0", "glyph": "☾", "glyphStyle": "flocked", "bg": "transparent", "seed": 13, "size": 256 },
+    { "name": "ic_stats",   "style": "felt", "shape": "circle",   "colors": ["#7c8a63"], "glyphColor": "#f1ead6", "glyph": "✿", "glyphStyle": "flocked", "bg": "transparent", "seed": 14, "size": 256 },
+    { "name": "ic_settings","style": "felt", "shape": "circle",   "colors": ["#efe3cd"], "glyphColor": "#8a5a3b", "glyph": "⚙", "glyphStyle": "flocked", "bg": "transparent", "seed": 15, "size": 256 },
+    { "name": "ui_home",    "type": "ui", "style": "vividglass", "colors": ["#f7b733", "#fc4a67", "#8b5cf6"], "glyphColor": "#ffffff", "glyphStyle": "frosted", "bg": "aurora", "bgColor": "#cfcbe0", "seed": 21, "appName": "Hourglass", "song": "Fasting — 14h 02m", "appGlyphs": ["⌛", "⏱", "☾", "⚙"], "artGlyph": "⌛" }
+  ]
+}

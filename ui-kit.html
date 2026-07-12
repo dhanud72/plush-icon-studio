@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plush UI Kit</title>
+<style>
+  *{box-sizing:border-box;margin:0}
+  /* phone pinned to the top-left so a 390x844 headless screenshot captures it
+     exactly (headless Edge enforces a minimum window width and crops) */
+  body{background:#232030;font-family:"Segoe UI",system-ui,sans-serif}
+  #phone{width:390px;height:844px;position:relative;overflow:hidden;border-radius:28px;
+    box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  #bgc{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .screen{position:absolute;inset:0;padding:20px 18px;display:flex;flex-direction:column;gap:14px;
+    color:rgba(255,255,255,.94)}
+  .clock{font-size:58px;font-weight:200;letter-spacing:.01em;line-height:1;
+    text-shadow:0 2px 12px rgba(40,30,80,.35);margin-top:8px}
+  .date{font-size:14px;opacity:.85;margin-top:4px;text-shadow:0 1px 6px rgba(40,30,80,.3)}
+  .card{background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.45);
+    border-radius:26px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 12px 30px rgba(40,30,80,.20),inset 0 1px 0 rgba(255,255,255,.5);padding:14px}
+  .qs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;justify-items:center}
+  .player{display:flex;gap:14px;align-items:center}
+  .player .meta{flex:1;min-width:0}
+  .player .title{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .player .artist{font-size:13px;opacity:.8;margin-top:2px}
+  .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.30);margin-top:10px;overflow:hidden}
+  .bar i{display:block;height:100%;width:42%;background:rgba(255,255,255,.95);border-radius:3px}
+  .ctl{display:flex;gap:22px;margin-top:10px;font-size:18px;letter-spacing:2px}
+  .row{display:flex;gap:10px;justify-content:space-between}
+  .row .card{flex:1;min-width:0;padding:8px;display:flex;align-items:center;justify-content:center}
+  .label{font-size:13px;font-weight:600;text-shadow:0 1px 6px rgba(40,30,80,.3)}
+  .dnd{display:flex;align-items:center;gap:4px}
+  .dnd .txt{font-size:15px;font-weight:600;line-height:1.3}
+  .crop{overflow:hidden;position:relative;flex:none}
+  .foot{margin-top:auto;display:flex;justify-content:center;gap:14px;padding-bottom:6px}
+</style>
+</head>
+<body>
+<div id="phone">
+  <canvas id="bgc" width="844" height="844"></canvas>
+  <div class="screen">
+    <div>
+      <div class="clock" id="clock">9:41</div>
+      <div class="date" id="date">Saturday, June 21</div>
+    </div>
+    <div class="card">
+      <div class="qs-grid" id="qs"></div>
+    </div>
+    <div class="card player">
+      <div id="art"></div>
+      <div class="meta">
+        <div class="title" id="song">Now Playing</div>
+        <div class="artist" id="artist">Your App</div>
+        <div class="bar"><i></i></div>
+        <div class="ctl">&#9198; &#9199; &#9197;</div>
+      </div>
+    </div>
+    <div class="card dnd" id="dndCard">
+      <div id="dnd"></div>
+      <div class="txt">Do Not<br>Disturb On</div>
+    </div>
+    <div class="row" id="apps"></div>
+    <div class="foot" id="foot"></div>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script>
+"use strict";
+/* base spec: overridden by ?spec={...} (schema in AGENTS.md) */
+const BASE={style:"vividglass",shape:"circle",glyphStyle:"frosted",bg:"aurora",
+  baseColor:"#f7b733",colorB:"#fc4a67",colorC:"#8b5cf6",glyphColor:"#ffffff",
+  bgColor:"#cfcbe0",glyphText:"☁",svgPath:"",glyphScale:46,furLen:14,density:1.0,
+  seed:72,uploadImg:null,uploadId:0};
+let UISPEC={};
+{
+  const q=new URLSearchParams(location.search);
+  if(q.has("spec")){
+    try{UISPEC=JSON.parse(q.get("spec"));applySpec(UISPEC,BASE);}catch(e){console.error(e);}
+  }
+  if(BASE.bg==="transparent")BASE.bg="aurora";
+}
+
+/* crop factors: visible band of the square icon canvas per shape */
+const CROP={circle:{h:0.74,off:0.13},squircle:{h:0.78,off:0.11},pill:{h:0.54,off:0.235}};
+function icon(parent,glyph,shape,disp,extra){
+  const cr=CROP[shape]||CROP.circle;
+  const wrap=document.createElement("div");
+  wrap.className="crop";
+  wrap.style.width=disp+"px";
+  wrap.style.height=Math.round(disp*cr.h)+"px";
+  const S=Math.round(disp*2);
+  const c=document.createElement("canvas");c.width=S;c.height=S;
+  c.style.cssText=`display:block;width:${disp}px;height:${disp}px;margin-top:${-Math.round(disp*cr.off)}px`;
+  const sp=Object.assign({},BASE,{bg:"transparent",glyphText:glyph,shape,
+    seed:(BASE.seed|0)+glyph.charCodeAt(0)},extra||{});
+  renderIcon(c.getContext("2d"),S,sp);
+  wrap.appendChild(c);parent.appendChild(wrap);
+}
+
+/* wallpaper */
+{
+  const bg=document.getElementById("bgc");
+  renderBackground(bg.getContext("2d"),844,mulberry32(BASE.seed|0||1),BASE);
+}
+/* quick settings 2x2 */
+["✈","♫","☾","⚙"].forEach(g=>icon(document.getElementById("qs"),g,"circle",96));
+/* player art */
+icon(document.getElementById("art"),UISPEC.artGlyph||"♪","squircle",110);
+/* do-not-disturb pill */
+icon(document.getElementById("dnd"),"☾","pill",190,{glyphScale:30});
+/* app shortcuts */
+(UISPEC.appGlyphs||["⏱","✉","☏","⌂"]).slice(0,4).forEach(g=>{
+  const card=document.createElement("div");card.className="card";
+  icon(card,g,"circle",64);
+  document.getElementById("apps").appendChild(card);
+});
+/* footer dots */
+["☀","♥","✿"].forEach(g=>icon(document.getElementById("foot"),g,"circle",72));
+/* text */
+if(UISPEC.song)document.getElementById("song").textContent=UISPEC.song;
+if(UISPEC.appName)document.getElementById("artist").textContent=UISPEC.appName;
+if(UISPEC.clock)document.getElementById("clock").textContent=UISPEC.clock;
+if(UISPEC.date)document.getElementById("date").textContent=UISPEC.date;
+document.title="EXPORT-READY";
+</script>
+</body>
+</html>
