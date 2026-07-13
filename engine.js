@@ -182,14 +182,14 @@ function furStroke(g,rng,x,y,ang,len,w,color){
 function renderFurBody(g,S,rng,opts){
   const {path,radii,base,furLen,density,felt,contained}=opts;
   const c=S/2,k=S/512;
-  const L=furLen*k*(felt?0.45:1);
+  const L=furLen*k*(felt?0.5:1.0);
   const ph1=rng()*6.28, ph2=rng()*6.28;
-  /* clumped fur flow: points outward at the rim, swirls in the middle */
+  const lx=-0.55, ly=-0.62;                 /* key light, top-left */
   const flowAng=(x,y,f)=>{
     const outw=Math.atan2(y-c,x-c);
     const swirl=Math.sin(x*0.02/k+ph1)+Math.cos(y*0.017/k+ph2);
-    const eb=Math.min(1,f*f)*0.75;
-    return outw*eb+swirl*1.1*(1-eb)+(rng()-0.5)*0.7;
+    const eb=Math.min(1,f*f)*0.7;
+    return outw*eb+swirl*(1-eb)+(rng()-0.5)*0.6;
   };
   const sample=()=>{
     const a=rng()*Math.PI*2;
@@ -198,52 +198,54 @@ function renderFurBody(g,S,rng,opts){
     const r=Math.sqrt(rng())*rMax;
     return {x:c+Math.cos(a)*r,y:c+Math.sin(a)*r,f:rMax>0?r/rMax:0};
   };
-  /* dense under-layer at half resolution, upscaled for velvet softness */
-  const hc=document.createElement("canvas");hc.width=S/2;hc.height=S/2;
-  const hg=hc.getContext("2d");
-  hg.setTransform(0.5,0,0,0.5,0,0);
-  const bgr=hg.createRadialGradient(c,c*0.92,S*0.05,c,c,S*0.44);
-  bgr.addColorStop(0,shade(base,+0.03));bgr.addColorStop(1,shade(base,-0.10));
-  hg.fillStyle=bgr;hg.fill(path);
-  const passes=[
-    {n:9000,dl:-0.10,a:0.45,len:1.15,w:2.6},   /* underfur */
-    {n:9000,dl:+0.02,a:0.45,len:0.95,w:2.2}    /* coat     */
-  ];
-  for(const p of passes){
-    const n=Math.round(p.n*density);
-    for(let i=0;i<n;i++){
-      const s=sample();
-      furStroke(hg,rng,s.x,s.y,flowAng(s.x,s.y,s.f),L*p.len*(0.6+rng()*0.7),p.w*k,
-        shadeA(base,p.dl+(rng()-0.5)*0.07,p.a));
-    }
-  }
-  g.drawImage(hc,0,0,S,S);
-  /* crisp top coat at full resolution */
-  const top=Math.round((felt?9500:6500)*density);
-  for(let i=0;i<top;i++){
+  /* precomputed tone ramps — strand (dark roots) and lit tip (bright) —
+     so we never run per-stroke colour math (keeps the dense pass fast) */
+  const ST=[],TP=[];
+  for(let j=0;j<13;j++){ST.push(shadeA(base,-0.16+j*0.022,0.55));
+    TP.push(shadeA(base,0.0+j*0.032,0.6));}
+  /* draw fur onto a temp canvas so the whole coat can be softened at once */
+  const fc=document.createElement("canvas");fc.width=S;fc.height=S;
+  const fg=fc.getContext("2d");
+  const bgr=fg.createRadialGradient(c,c*0.88,S*0.05,c,c,S*0.5);
+  bgr.addColorStop(0,shade(base,-0.03));bgr.addColorStop(1,shade(base,-0.19));
+  fg.fillStyle=bgr;fg.fill(path);
+  fg.save();fg.clip(path);fg.lineCap="round";
+  const total=Math.round((felt?14000:10000)*density*k*k);
+  for(let i=0;i<total;i++){
     const s=sample();
-    furStroke(g,rng,s.x,s.y,flowAng(s.x,s.y,s.f),L*(0.5+rng()*0.5),1.3*k,
-      shadeA(base,0.04+(rng()-0.4)*0.14,0.5));
+    const ang=flowAng(s.x,s.y,s.f);
+    const len=L*(0.5+rng()*0.7);
+    const bend=(rng()-0.5)*len*0.8;
+    const mx=s.x+Math.cos(ang)*len*0.5+Math.cos(ang+1.5708)*bend*0.5;
+    const my=s.y+Math.sin(ang)*len*0.5+Math.sin(ang+1.5708)*bend*0.5;
+    const ex=s.x+Math.cos(ang)*len, ey=s.y+Math.sin(ang)*len;
+    fg.strokeStyle=ST[(2+rng()*6)|0];fg.lineWidth=1.4*k;
+    fg.beginPath();fg.moveTo(s.x,s.y);fg.quadraticCurveTo(mx,my,ex,ey);fg.stroke();
+    /* lit tip — brighter when the strand points toward the light */
+    const align=Math.cos(ang)*lx+Math.sin(ang)*ly;
+    let ti=(4+align*7+rng()*2)|0;if(ti<0)ti=0;else if(ti>12)ti=12;
+    fg.fillStyle=TP[ti];fg.fillRect(ex-0.75*k,ey-0.75*k,1.6*k,1.6*k);
   }
-  /* edge halo — short dense fluff, not spikes (skipped when sealed under glass) */
-  const fr=contained?0:Math.round(2600*density);
-  for(let i=0;i<fr;i++){
-    const a=rng()*Math.PI*2;
-    const ri=Math.floor(a/(Math.PI*2)*radii.length)%radii.length;
-    const r=radii[ri]-rng()*2*k;
-    const x=c+Math.cos(a)*r,y=c+Math.sin(a)*r;
-    const ang=a+(rng()-0.5)*0.6;
-    furStroke(g,rng,x,y,ang,L*(0.35+rng()*0.45),1.2*k,
-      shadeA(base,0.02+(rng()-0.5)*0.10,0.5));
-  }
-  if(felt){ /* speckle */
-    for(let i=0;i<4000*density*k*k;i++){
+  fg.restore();
+  /* soften: blurred coat + a sharper overlay, so strands read as fibre not ink */
+  g.save();g.filter=`blur(${0.9*k}px)`;g.drawImage(fc,0,0);g.restore();
+  g.globalAlpha=0.55;g.drawImage(fc,0,0);g.globalAlpha=1;
+  /* fuzzy silhouette halo (outside the clip) — short, dense, soft.
+     Drawn onto its own canvas and blurred ONCE (never per-stroke). */
+  if(!contained){
+    const hc=document.createElement("canvas");hc.width=S;hc.height=S;
+    const hg=hc.getContext("2d");hg.lineCap="round";
+    const fr=Math.round(4000*density*k);
+    for(let i=0;i<fr;i++){
       const a=rng()*Math.PI*2;
       const ri=Math.floor(a/(Math.PI*2)*radii.length)%radii.length;
-      const r=Math.sqrt(rng())*radii[ri];
-      g.fillStyle=shadeA(base,(rng()-0.5)*0.3,0.15);
-      g.fillRect(c+Math.cos(a)*r,c+Math.sin(a)*r,1.2*k,1.2*k);
+      const r=radii[ri]-rng()*3*k;
+      const x=c+Math.cos(a)*r,y=c+Math.sin(a)*r;
+      const ang=a+(rng()-0.5)*0.45,len=L*(0.22+rng()*0.33);
+      hg.strokeStyle=(rng()<0.6?ST:TP)[(1+rng()*5)|0];hg.lineWidth=1.0*k;
+      hg.beginPath();hg.moveTo(x,y);hg.lineTo(x+Math.cos(ang)*len,y+Math.sin(ang)*len);hg.stroke();
     }
+    g.save();g.filter=`blur(${0.5*k}px)`;g.drawImage(hc,0,0);g.restore();
   }
 }
 function applyLighting(g,S,sheen){
