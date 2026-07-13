@@ -1,4 +1,4 @@
-<title>Plush Icon Studio</title>
+<title>Glass Icon Studio</title>
 <style>
   :root{
     --ground:#EAE6DE; --panel:#F6F3ED; --panel2:#EFEBE2; --ink:#33302B; --ink-soft:#6E6759;
@@ -91,8 +91,8 @@
 </style>
 
 <header>
-  <div class="wordmark">Plush Icon Studio</div>
-  <div class="tagline">procedural vivid-glass · fluffy · felt · clay · jelly app icons — no AI image credits needed</div>
+  <div class="wordmark">Glass Icon Studio</div>
+  <div class="tagline">procedural vivid · glass · jelly app icons — thick refractive glass, no AI image credits</div>
 </header>
 
 <main>
@@ -104,7 +104,7 @@
       <div class="row" style="margin-top:6px"><label>Color C (bottom)</label><input type="color" id="colorC" value="#8b5cf6"></div>
       <div class="row" style="margin-top:6px"><label>Glyph</label><input type="color" id="glyphColor" value="#ffffff"></div>
       <div class="row" style="margin-top:6px"><label>Backdrop</label><input type="color" id="bgColor" value="#cfcbe0"></div>
-      <p class="hint" style="margin:8px 0 0">Vivid, Glass and Jelly blend A→B→C. Fur, felt and clay use Color A.</p>
+      <p class="hint" style="margin:8px 0 0">All three materials blend Color A → B → C top to bottom.</p>
     </div>
 
     <div class="group">
@@ -118,10 +118,6 @@
         <button data-v="vividglass" class="on">Vivid</button>
         <button data-v="glass">Glass</button>
         <button data-v="jelly">Jelly</button>
-        <button data-v="fluffy">Fluffy</button>
-        <button data-v="felt">Felt</button>
-        <button data-v="clay">Clay</button>
-        <button data-v="furglass">Fur+Glass</button>
       </div>
     </div>
 
@@ -150,9 +146,6 @@
       <div class="row" style="margin-top:4px"><label>Finish</label></div>
       <div class="seg" id="segGlyphStyle">
         <button data-v="frosted" class="on">Frosted</button>
-        <button data-v="satin">Satin</button>
-        <button data-v="flocked">Flocked</button>
-        <button data-v="stitched">Stitched</button>
         <button data-v="raised">Raised</button>
       </div>
       <details style="margin-top:10px">
@@ -163,20 +156,10 @@
     </div>
 
     <div class="group">
-      <div class="label">Fur</div>
-      <div class="row"><label>Length</label>
-        <input type="range" id="furLen" min="6" max="26" value="14"><span class="val" id="furLenV">14</span></div>
-      <div class="row" style="margin-top:4px"><label>Density</label>
-        <input type="range" id="density" min="40" max="160" value="100"><span class="val" id="densityV">1.0</span></div>
-    </div>
-
-    <div class="group">
-      <div class="label">Light &amp; depth</div>
+      <div class="label">Light &amp; thickness</div>
       <div class="row"><label>Light angle</label>
         <input type="range" id="lightAngle" min="0" max="360" value="225"><span class="val" id="lightAngleV">225°</span></div>
-      <div class="row" style="margin-top:4px"><label>Puffiness <span class="hint">(wool)</span></label>
-        <input type="range" id="puff" min="40" max="220" value="100"><span class="val" id="puffV">1.0</span></div>
-      <div class="row" style="margin-top:4px"><label>Thickness <span class="hint">(glass)</span></label>
+      <div class="row" style="margin-top:4px"><label>Glass thickness</label>
         <input type="range" id="glassThick" min="40" max="220" value="100"><span class="val" id="glassThickV">1.0</span></div>
     </div>
 
@@ -247,14 +230,9 @@ const PALETTES = [
   {name:"Ocean",       base:"#5de0c0", b:"#4aa3f0", c:"#9b5de5", glyph:"#ffffff", bg:"#c8d4e8"},
   {name:"Sunset Wave", base:"#ffd166", b:"#ef476f", c:"#5f4bb6", glyph:"#fff5e8", bg:"#d8cfe8"},
   {name:"Candy Sky",   base:"#ffb7e0", b:"#a685e2", c:"#6cd4ff", glyph:"#ffffff", bg:"#e3dcf0"},
-  {name:"Cozy Cream",  base:"#efe3cd", glyph:"#8a5a3b", bg:"#e8c9b0"},
-  {name:"Cocoa",       base:"#8a5030", glyph:"#f3e6d0", bg:"#e8c9b0"},
-  {name:"Sage",        base:"#7c8a63", glyph:"#f1ead6", bg:"#ded8c3"},
-  {name:"Forest",      base:"#1d4d33", glyph:"#eef5e6", bg:"#3a3d38"},
-  {name:"Pink Plush",  base:"#f2a7bc", glyph:"#7c2f45", bg:"#f6c9d6"},
-  {name:"Night Fur",   base:"#26221f", glyph:"#cfc8bd", bg:"#171412"},
-  {name:"Ivory Clay",  base:"#efe9dd", glyph:"#22201d", bg:"#ddd5c6"},
-  {name:"Denim",       base:"#3d4d7a", glyph:"#e9ecf5", bg:"#c9cfdd"},
+  {name:"Forest Glass",base:"#2f9e44", b:"#40c057", c:"#1d6b2e", glyph:"#eaffea", bg:"#c8dcc8"},
+  {name:"Rose",        base:"#f2a7bc", b:"#e58aa8", c:"#c56b8f", glyph:"#ffffff", bg:"#f6c9d6"},
+  {name:"Denim",       base:"#6ea8e0", b:"#4a7bd0", c:"#3d4d7a", glyph:"#eef4ff", bg:"#c9cfdd"},
   {name:"Lilac Glass", base:"#8d79b8", glyph:"#f0e8ff", bg:"#4a4157"},
   {name:"Blossom",     base:"#f2b6c6", glyph:"#3a2a30", bg:"#cfc4b2"},
   {name:"Meadow",      base:"#9ec27e", glyph:"#2c5a2e", bg:"#88a86a"},
@@ -1013,14 +991,8 @@ $("glyphFile").addEventListener("change",e=>{
 $("clearUpload").addEventListener("click",()=>{dropUpload();requestRender(true);});
 $("glyphScale").addEventListener("input",e=>{state.glyphScale=+e.target.value;
   $("glyphScaleV").textContent=e.target.value+"%";requestRender();});
-$("furLen").addEventListener("input",e=>{state.furLen=+e.target.value;
-  $("furLenV").textContent=e.target.value;requestRender();});
-$("density").addEventListener("input",e=>{state.density=+e.target.value/100;
-  $("densityV").textContent=(+e.target.value/100).toFixed(1);requestRender();});
 $("lightAngle").addEventListener("input",e=>{state.light=+e.target.value;
   $("lightAngleV").textContent=e.target.value+"°";requestRender();});
-$("puff").addEventListener("input",e=>{state.puff=+e.target.value/100;
-  $("puffV").textContent=(+e.target.value/100).toFixed(1);requestRender();});
 $("glassThick").addEventListener("input",e=>{state.glassThick=+e.target.value/100;
   $("glassThickV").textContent=(+e.target.value/100).toFixed(1);requestRender();});
 $("seed").addEventListener("input",e=>{state.seed=parseInt(e.target.value,10)||1;requestRender();});
@@ -1067,7 +1039,7 @@ $("download").addEventListener("click",()=>{
     state.bg=prevBg;
     const url=c.toDataURL("image/png");
     const name=(state.glyphText||"icon").replace(/[^\w]/g,"")||"icon";
-    const file=`plush-${state.style}-${name}-${S}.png`;
+    const file=`glass-${state.style}-${name}-${S}.png`;
     $("exportImg").src=url;
     $("sheetTitle").textContent=`${S} × ${S} px — ${file}`;
     const a=$("saveLink");a.href=url;a.download=file;
@@ -1084,10 +1056,7 @@ function syncControls(){
    ["glyphColor",state.glyphColor],["bgColor",state.bgColor]].forEach(([id,v])=>$(id).value=v);
   $("glyphText").value=state.glyphText;$("svgPath").value=state.svgPath;
   $("glyphScale").value=state.glyphScale;$("glyphScaleV").textContent=state.glyphScale+"%";
-  $("furLen").value=state.furLen;$("furLenV").textContent=state.furLen;
-  $("density").value=Math.round(state.density*100);$("densityV").textContent=state.density.toFixed(1);
   $("lightAngle").value=state.light;$("lightAngleV").textContent=state.light+"°";
-  $("puff").value=Math.round(state.puff*100);$("puffV").textContent=state.puff.toFixed(1);
   $("glassThick").value=Math.round(state.glassThick*100);$("glassThickV").textContent=state.glassThick.toFixed(1);
   $("seed").value=state.seed;
   [["segStyle",state.style],["segShape",state.shape],
