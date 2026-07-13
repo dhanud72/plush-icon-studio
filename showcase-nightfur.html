@@ -28,7 +28,7 @@ const P={
 
 const NIGHT={style:"fluffy",shape:"circle",glyphStyle:"satin",bg:"transparent",
   baseColor:"#1b1819",colorB:"#1b1819",colorC:"#1b1819",glyphColor:"#d8d2c8",
-  bgColor:"#151313",glyphText:"",svgPath:"",glyphScale:44,furLen:8,density:1.5,
+  bgColor:"#151313",glyphText:"",svgPath:"",glyphScale:44,furLen:11,density:1.6,
   sheen:0.5,seed:9,uploadImg:null,uploadId:0};
 const PETAL="#262220",PET_HI="rgb(78,72,64)",PET_LO="rgb(8,6,5)";
 
@@ -84,6 +84,20 @@ function embroider(cx,cy,SM,draw,rot,clip){
   og.globalAlpha=0.7;og.drawImage(tintMask(mask,PET_HI),-1.6*F,-1.6*F);
   og.globalAlpha=0.6;og.drawImage(tintMask(mask,PET_LO),1.6*F,2*F);
   og.globalCompositeOperation="source-over";og.globalAlpha=1;
+  /* needle-felted wool fibres so flowers read as wool, not smooth cutouts */
+  const wc=document.createElement("canvas");wc.width=PS;wc.height=PS;
+  const wg=wc.getContext("2d"),rng=mulberry32(3),bb=mask.bbox;
+  const nf=Math.min(70000,Math.round(bb.w*bb.h*0.22));
+  wg.lineCap="round";
+  for(let i=0;i<nf;i++){
+    const x=bb.x+rng()*bb.w,y=bb.y+rng()*bb.h;
+    const a=rng()*Math.PI*2,len=(2.2+rng()*3.4)*F;
+    wg.strokeStyle=rng()<0.5?"rgba(76,70,62,0.5)":"rgba(7,5,4,0.5)";
+    wg.lineWidth=1.0*F;
+    wg.beginPath();wg.moveTo(x,y);wg.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len);wg.stroke();
+  }
+  wg.globalCompositeOperation="destination-in";wg.drawImage(mask.canvas,0,0);
+  og.drawImage(wc,0,0);
   ctx.save();
   if(clip){rr(ctx,clip.x,clip.y,clip.w,clip.h,clip.r);ctx.clip();}
   ctx.translate(cx,cy);if(rot)ctx.rotate(rot);
