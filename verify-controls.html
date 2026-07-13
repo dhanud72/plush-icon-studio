@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>verify</title>
+<style>body{margin:0}canvas{display:block}</style></head><body>
+<canvas id="s" width="900" height="640"></canvas>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const SCALE=2,cv=document.getElementById("s");cv.width=900*SCALE;cv.height=640*SCALE;
+const ctx=cv.getContext("2d");ctx.scale(SCALE,SCALE);
+let bg=ctx.createLinearGradient(0,0,0,640);bg.addColorStop(0,"#e9e7f0");bg.addColorStop(1,"#dddbe6");
+ctx.fillStyle=bg;ctx.fillRect(0,0,900,640);
+const base={style:"vividglass",shape:"squircle",glyphStyle:"frosted",bg:"transparent",
+  baseColor:"#f7b733",colorB:"#fc4a67",colorC:"#8b5cf6",glyphColor:"#fff",bgColor:"#ccc",
+  glyphText:"☁",svgPath:"",glyphScale:44,furLen:8,density:1.3,sheen:0.7,seed:7,
+  light:225,glassThick:1,puff:1,uploadImg:null,uploadId:0};
+function tile(cx,cy,disp,over){const S=Math.round(disp*SCALE);
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  renderIcon(t.getContext("2d"),S,Object.assign({},base,over));
+  ctx.drawImage(t,cx-disp/2,cy-disp/2,disp,disp);}
+function label(x,y,s){ctx.fillStyle="#555";ctx.font="15px Segoe UI";ctx.textAlign="center";ctx.fillText(s,x,y);}
+// row 1: glass thickness thin -> thick
+tile(120,130,190,{style:"glass",shape:"circle",baseColor:"#dfe9f2",colorB:"#cfe0d6",colorC:"#bfd0e2",glyphColor:"#2f6b3f",glyphStyle:"raised",glyph:"♪",glassThick:0.5});
+tile(330,130,190,{style:"glass",shape:"circle",baseColor:"#dfe9f2",colorB:"#cfe0d6",colorC:"#bfd0e2",glyphColor:"#2f6b3f",glyphStyle:"raised",glyph:"♪",glassThick:1.2});
+tile(540,130,190,{style:"glass",shape:"circle",baseColor:"#dfe9f2",colorB:"#cfe0d6",colorC:"#bfd0e2",glyphColor:"#2f6b3f",glyphStyle:"raised",glyph:"♪",glassThick:2.0});
+tile(760,130,190,{style:"vividglass",shape:"squircle",glassThick:1.6,glyph:"☀"});
+label(120,240,"glass thin");label(330,240,"medium");label(540,240,"thick");label(760,240,"vivid thick");
+// row 2: wool puffiness + light angle + clean edge
+tile(120,400,200,{style:"fluffy",shape:"squircle",baseColor:"#2a2426",glyphColor:"#e8e2d8",glyphStyle:"satin",glyph:"✈",bg:"transparent",puff:0.6,light:225});
+tile(340,400,200,{style:"fluffy",shape:"squircle",baseColor:"#2a2426",glyphColor:"#e8e2d8",glyphStyle:"satin",glyph:"✈",bg:"transparent",puff:1.4,light:225});
+tile(560,400,200,{style:"fluffy",shape:"circle",baseColor:"#7c8a63",glyphColor:"#f1ead6",glyphStyle:"satin",glyph:"✿",bg:"transparent",puff:1.3,light:90});
+tile(770,400,200,{style:"felt",shape:"circle",baseColor:"#8a5030",glyphColor:"#f3e6d0",glyphStyle:"stitched",glyph:"☾",bg:"transparent",puff:1.2,light:315});
+label(120,520,"wool flat");label(340,520,"wool puffy");label(560,520,"light below");label(770,520,"light top-right");
+document.title="EXPORT-READY";
+</script></body></html>
