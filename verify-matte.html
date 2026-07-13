@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>matte</title>
+<style>body{margin:0}canvas{display:block}</style></head><body>
+<canvas id="s" width="820" height="320"></canvas>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const SCALE=2,cv=document.getElementById("s");cv.width=820*SCALE;cv.height=320*SCALE;
+const ctx=cv.getContext("2d");ctx.scale(SCALE,SCALE);
+let bg=ctx.createLinearGradient(0,0,0,320);bg.addColorStop(0,"#dfdce8");bg.addColorStop(1,"#d3d0dc");
+ctx.fillStyle=bg;ctx.fillRect(0,0,820,320);
+const base={style:"fluffy",shape:"squircle",glyphStyle:"satin",bg:"transparent",
+  baseColor:"#efe3cd",colorB:"#000",colorC:"#000",glyphColor:"#8a5a3b",bgColor:"#ccc",
+  glyphText:"♥",svgPath:"",glyphScale:44,furLen:9,density:1.6,seed:9,
+  light:225,glassThick:1,puff:1.1,sheen:0.7,uploadImg:null,uploadId:0};
+function tile(cx,cy,disp,over){const S=Math.round(disp*SCALE);
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  renderIcon(t.getContext("2d"),S,Object.assign({},base,over));
+  ctx.drawImage(t,cx-disp/2,cy-disp/2,disp,disp);}
+tile(140,160,220,{baseColor:"#efe3cd",glyphColor:"#8a5a3b",glyph:"♥"});
+tile(360,160,220,{baseColor:"#1b1819",glyphColor:"#e0dacf",glyph:"✈"});
+tile(560,160,190,{style:"felt",shape:"circle",baseColor:"#7c8a63",glyphColor:"#f1ead6",glyphStyle:"stitched",glyph:"✿"});
+tile(730,160,150,{style:"fluffy",shape:"circle",baseColor:"#f2a7bc",glyphColor:"#7c2f45",glyph:"★"});
+document.title="EXPORT-READY";
+</script></body></html>

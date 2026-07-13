@@ -199,7 +199,8 @@ function renderFurBody(g,S,rng,opts){
      so we never run per-stroke colour math (keeps the dense pass fast) */
   const ST=[],TP=[];
   for(let j=0;j<13;j++){ST.push(shadeA(base,-0.16+j*0.022,0.55));
-    TP.push(shadeA(base,0.0+j*0.032,0.6));}
+    /* matte tips — gentle lift, low alpha, so fibres don't glint like glass */
+    TP.push(shadeA(base,-0.03+j*0.017,0.4));}
   /* draw fur onto a temp canvas so the whole coat can be softened at once */
   const fc=document.createElement("canvas");fc.width=S;fc.height=S;
   const fg=fc.getContext("2d");
@@ -232,9 +233,9 @@ function renderFurBody(g,S,rng,opts){
      lit on the top-left, in shadow on the bottom-right, defines the edge. */
   g.save();g.clip(path);
   const eg=g.createLinearGradient(S/2+lx*S*0.42,S/2+ly*S*0.42,S/2-lx*S*0.42,S/2-ly*S*0.42);
-  eg.addColorStop(0,"rgba(255,255,255,0.24)");
-  eg.addColorStop(0.42,"rgba(255,255,255,0.02)");
-  eg.addColorStop(0.58,"rgba(0,0,0,0.05)");
+  eg.addColorStop(0,"rgba(255,253,248,0.13)");
+  eg.addColorStop(0.42,"rgba(255,253,248,0.02)");
+  eg.addColorStop(0.58,"rgba(0,0,0,0.06)");
   eg.addColorStop(1,"rgba(0,0,0,0.42)");
   g.strokeStyle=eg;g.lineWidth=7*k;g.stroke(path);
   /* a thin darker cut-line right at the trimmed edge for crisp definition */
@@ -246,18 +247,19 @@ function applyLighting(g,S,sheen,lx,ly,puff){
   const p=puff===undefined?1:puff;                 /* puffiness */
   lx=lx===undefined?-0.55:lx; ly=ly===undefined?-0.62:ly;
   g.globalCompositeOperation="source-atop";
-  /* puffy dome: highlight bulges from the light side, strength = puffiness */
-  const hx=S*(0.5+lx*0.17), hy=S*(0.5+ly*0.17);
-  let gr=g.createRadialGradient(hx,hy,S*0.02,S*0.5,S*0.5,S*0.62);
-  gr.addColorStop(0,`rgba(255,255,255,${Math.min(0.9,0.26*f*p)})`);
-  gr.addColorStop(0.5,`rgba(255,255,255,${0.06*f*p})`);
-  gr.addColorStop(1,"rgba(255,255,255,0)");
+  /* MATTE diffuse shading — wool scatters light, so a broad soft gradient
+     brighter toward the light and darker away from it, with NO concentrated
+     glossy hotspot (that read as shiny glass). */
+  let gr=g.createLinearGradient(S/2+lx*S*0.55,S/2+ly*S*0.55,S/2-lx*S*0.55,S/2-ly*S*0.55);
+  gr.addColorStop(0,`rgba(255,253,248,${0.13*f*p})`);
+  gr.addColorStop(0.45,`rgba(255,253,248,${0.02*f})`);
+  gr.addColorStop(0.62,`rgba(0,0,0,${0.05*p})`);
+  gr.addColorStop(1,`rgba(0,0,0,${Math.min(0.7,0.46*p)})`);
   g.fillStyle=gr;g.fillRect(0,0,S,S);
-  /* opposite side falls into shadow (deeper with more puffiness) */
-  gr=g.createLinearGradient(S/2+lx*S*0.5,S/2+ly*S*0.5,S/2-lx*S*0.5,S/2-ly*S*0.5);
-  gr.addColorStop(0,"rgba(0,0,0,0)");
-  gr.addColorStop(0.5,`rgba(0,0,0,${0.05*p})`);
-  gr.addColorStop(1,`rgba(0,0,0,${Math.min(0.75,0.48*p)})`);
+  /* very soft, broad central lift (the crown of the pile), low intensity */
+  gr=g.createRadialGradient(S*(0.5+lx*0.14),S*(0.5+ly*0.14),S*0.10,S*0.5,S*0.5,S*0.62);
+  gr.addColorStop(0,`rgba(255,253,248,${0.07*f*p})`);
+  gr.addColorStop(1,"rgba(255,253,248,0)");
   g.fillStyle=gr;g.fillRect(0,0,S,S);
   /* soft edge ambient-occlusion ring so it seats like a rounded pad */
   gr=g.createRadialGradient(S*0.5,S*0.5,S*0.34,S*0.5,S*0.5,S*0.52);
