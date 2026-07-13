@@ -409,8 +409,55 @@ function shapeMetrics(type,S){
   if(type==="pill"){const w=S*0.78,h=S*0.40;return{x:c-w/2,y:c-h/2,w,h};}
   const w=S*0.70;return{x:c-w/2,y:c-w/2,w,h:w};
 }
+/* soft coloured glow the glass throws beneath itself (the "light shadow") */
+function glassLightShadow(g,S,path,tint){
+  g.save();
+  g.filter=`blur(${S*0.055}px)`;
+  g.globalAlpha=0.6;
+  g.fillStyle=shade(tint,+0.06);
+  g.translate(0,S*0.03);g.scale(1.0,0.97);
+  g.fill(path);
+  g.restore();
+}
+/* thick beveled glass edge + light focusing through the lens.
+   Draws an outer wall rim and an inset inner-surface ring (the gap between
+   them reads as real glass thickness), plus a caustic pooled at the base. */
+function glassThickness(g,S,path,m,k){
+  const cx=S/2,cy=S/2;
+  g.save();g.clip(path);
+  /* caustic — light passing through and focusing near the bottom edge */
+  g.save();g.filter=`blur(${4*k}px)`;
+  const cg=g.createRadialGradient(cx,m.y+m.h*0.80,S*0.02,cx,m.y+m.h*0.80,m.w*0.55);
+  cg.addColorStop(0,"rgba(255,255,255,0.45)");cg.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=cg;g.fillRect(0,0,S,S);g.filter="none";g.restore();
+  /* outer wall — thick directional rim (top-left bright, bottom bright too) */
+  let lg=g.createLinearGradient(m.x,m.y,m.x+m.w,m.y+m.h);
+  lg.addColorStop(0,"rgba(255,255,255,0.95)");
+  lg.addColorStop(0.4,"rgba(255,255,255,0.22)");
+  lg.addColorStop(0.6,"rgba(255,255,255,0.10)");
+  lg.addColorStop(1,"rgba(255,255,255,0.85)");
+  g.strokeStyle=lg;g.lineWidth=9*k;g.stroke(path);
+  /* inner surface ring, inset ~15% — the second edge that reads as thickness */
+  g.save();g.translate(cx,cy);g.scale(0.855,0.855);g.translate(-cx,-cy);
+  g.strokeStyle="rgba(12,10,26,0.24)";g.lineWidth=7*k;g.stroke(path);   /* refraction shadow at bevel base */
+  g.strokeStyle="rgba(255,255,255,0.55)";g.lineWidth=2.6*k;g.stroke(path); /* inner-surface highlight */
+  g.restore();
+  g.restore();
+}
+function glassGloss(g,S,path,m,k){
+  g.save();g.clip(path);
+  const gl=g.createLinearGradient(0,m.y+m.h*0.02,0,m.y+m.h*0.28);
+  gl.addColorStop(0,"rgba(255,255,255,0.6)");gl.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=gl;
+  g.beginPath();g.ellipse(m.x+m.w*0.5,m.y+m.h*0.13,m.w*0.42,m.h*0.11,0,0,Math.PI*2);g.fill();
+  g.filter=`blur(${1.2*k}px)`;g.fillStyle="rgba(255,255,255,0.95)";
+  g.beginPath();g.ellipse(m.x+m.w*0.26,m.y+m.h*0.15,6*k,3.5*k,-0.5,0,Math.PI*2);g.fill();
+  g.filter="none";
+  g.restore();
+}
 function renderGlassBody(g,S,path,cA,cB,cC,mode,shape){
   const k=S/512,m=shapeMetrics(shape,S);
+  glassLightShadow(g,S,path,cB);
   /* soft drop shadow + body tint */
   g.save();
   g.shadowColor="rgba(25,18,35,0.35)";g.shadowBlur=S*0.035;g.shadowOffsetY=S*0.02;
@@ -430,32 +477,14 @@ function renderGlassBody(g,S,path,cA,cB,cC,mode,shape){
     lg.addColorStop(1,shadeA(cC,-0.05,0.40));
   }
   g.fillStyle=lg;g.fillRect(0,0,S,S);
-  /* light pooling at the bottom (refraction) */
-  const rg=g.createRadialGradient(S/2,m.y+m.h*0.92,S*0.02,S/2,m.y+m.h*0.92,m.w*0.45);
-  rg.addColorStop(0,"rgba(255,255,255,0.38)");rg.addColorStop(1,"rgba(255,255,255,0)");
-  g.fillStyle=rg;g.fillRect(0,0,S,S);
-  /* rim light — brighter top and bottom edges */
-  lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
-  lg.addColorStop(0,"rgba(255,255,255,0.85)");
-  lg.addColorStop(0.35,"rgba(255,255,255,0.15)");
-  lg.addColorStop(1,"rgba(255,255,255,0.90)");
-  g.strokeStyle=lg;g.lineWidth=4*k;g.stroke(path);
-  /* specular lens */
-  lg=g.createLinearGradient(0,m.y+m.h*0.06,0,m.y+m.h*0.42);
-  lg.addColorStop(0,"rgba(255,255,255,0.60)");lg.addColorStop(1,"rgba(255,255,255,0.03)");
-  g.fillStyle=lg;
-  g.beginPath();g.ellipse(m.x+m.w/2,m.y+m.h*0.22,m.w*0.38,m.h*0.17,0,0,Math.PI*2);g.fill();
-  /* sparkle dots */
-  g.filter=`blur(${1.5*k}px)`;
-  g.fillStyle="rgba(255,255,255,0.9)";
-  g.beginPath();g.ellipse(m.x+m.w*0.22,m.y+m.h*0.16,7*k,4*k,-0.5,0,Math.PI*2);g.fill();
-  g.beginPath();g.ellipse(m.x+m.w*0.80,m.y+m.h*0.13,4*k,2.5*k,0.4,0,Math.PI*2);g.fill();
-  g.filter="none";
   g.restore();
+  glassThickness(g,S,path,m,k);
+  glassGloss(g,S,path,m,k);
 }
 /* vivid gradient glass — tri-colour body, wave layers, thick luminous rim */
 function renderVividGlass(g,S,rng,path,shape,cA,cB,cC){
   const k=S/512,m=shapeMetrics(shape,S);
+  glassLightShadow(g,S,path,cB);
   /* deep soft shadow */
   g.save();
   g.shadowColor="rgba(60,40,100,0.45)";g.shadowBlur=S*0.05;g.shadowOffsetY=S*0.028;
@@ -488,20 +517,9 @@ function renderVividGlass(g,S,rng,path,shape,cA,cB,cC){
     wg.addColorStop(0,wv.a1);wg.addColorStop(1,wv.a2);
     g.fillStyle=wg;g.fill();
   }
-  /* glass thickness: broad inner glow + crisp double rim */
-  g.strokeStyle="rgba(255,255,255,0.16)";g.lineWidth=12*k;g.stroke(path);
-  lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
-  lg.addColorStop(0,"rgba(255,255,255,0.95)");
-  lg.addColorStop(0.3,"rgba(255,255,255,0.25)");
-  lg.addColorStop(0.75,"rgba(255,255,255,0.25)");
-  lg.addColorStop(1,"rgba(255,255,255,0.85)");
-  g.strokeStyle=lg;g.lineWidth=3.5*k;g.stroke(path);
-  /* top sheen */
-  lg=g.createLinearGradient(0,m.y+m.h*0.03,0,m.y+m.h*0.20);
-  lg.addColorStop(0,"rgba(255,255,255,0.55)");lg.addColorStop(1,"rgba(255,255,255,0)");
-  g.fillStyle=lg;
-  g.beginPath();g.ellipse(m.x+m.w/2,m.y+m.h*0.11,m.w*0.44,m.h*0.09,0,0,Math.PI*2);g.fill();
   g.restore();
+  glassThickness(g,S,path,m,k);
+  glassGloss(g,S,path,m,k);
 }
 /* glass case over a fur body */
 function glassOverlay(g,S,path,shape){

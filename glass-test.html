@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Glass test</title>
+<style>body{margin:0}canvas{display:block}</style></head><body>
+<canvas id="s" width="740" height="560"></canvas>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const SCALE=2, cv=document.getElementById("s");
+cv.width=740*SCALE;cv.height=560*SCALE;
+const ctx=cv.getContext("2d");ctx.scale(SCALE,SCALE);
+/* soft light backdrop */
+let bg=ctx.createLinearGradient(0,0,0,560);
+bg.addColorStop(0,"#eceaf2");bg.addColorStop(1,"#e2e0ea");
+ctx.fillStyle=bg;ctx.fillRect(0,0,740,560);
+const base={shape:"squircle",glyphStyle:"frosted",bg:"transparent",
+  baseColor:"#f7b733",colorB:"#fc4a67",colorC:"#8b5cf6",glyphColor:"#ffffff",
+  bgColor:"#cfcbe0",glyphText:"☁",svgPath:"",glyphScale:46,furLen:8,density:1,
+  sheen:1,seed:7,uploadImg:null,uploadId:0};
+function tile(cx,cy,disp,over){
+  const S=Math.round(disp*SCALE);
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  renderIcon(t.getContext("2d"),S,Object.assign({},base,over));
+  ctx.drawImage(t,cx-disp/2,cy-disp/2,disp,disp);
+}
+/* vivid glass */
+tile(150,160,250,{style:"vividglass",shape:"squircle",glyph:"☁"});
+tile(390,160,250,{style:"vividglass",shape:"squircle",colorB:"#4aa3f0",baseColor:"#5de0c0",colorC:"#9b5de5",glyph:"☀"});
+/* clear-ish glass (light colours = see-through look) */
+tile(600,150,210,{style:"glass",shape:"circle",baseColor:"#dfe9f2",colorB:"#cfe0d6",colorC:"#bfd0e2",glyphColor:"#2f6b3f",svgPath:"M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.07 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z",glyph:"",glyphScale:44});
+/* jelly + glass circle + pill */
+tile(140,410,190,{style:"jelly",shape:"circle",baseColor:"#2f9e44",colorB:"#40c057",colorC:"#2b8a3e",glyphColor:"#eaffea",glyphStyle:"raised",glyph:"♪"});
+tile(340,410,190,{style:"glass",shape:"circle",baseColor:"#f2b6c6",colorB:"#e58aa8",colorC:"#d06a90",glyphColor:"#ffffff",glyphStyle:"raised",glyph:"⚙",glyphScale:44});
+tile(560,410,250,{style:"vividglass",shape:"pill",glyph:"☀",glyphScale:34});
+document.title="EXPORT-READY";
+</script></body></html>
