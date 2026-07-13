@@ -162,6 +162,8 @@
       <div class="row" style="margin-top:4px"><label>Glass thickness</label>
         <input type="range" id="glassThick" min="40" max="220" value="100"><span class="val" id="glassThickV">1.0</span></div>
       <div class="row" style="margin-top:4px"><label>Transparency <span class="hint">(solid → see-through)</span></label>
+        <input type="range" id="transp" min="0" max="100" value="0"><span class="val" id="transpV">0.00</span></div>
+      <div class="row" style="margin-top:4px"><label>Glass tint <span class="hint">(solid colour → clear)</span></label>
         <input type="range" id="clarity" min="0" max="100" value="50"><span class="val" id="clarityV">0.5</span></div>
       <div class="row" style="margin-top:4px"><label>Frost <span class="hint">(clear → milky)</span></label>
         <input type="range" id="frost" min="0" max="100" value="0"><span class="val" id="frostV">0.00</span></div>
@@ -225,7 +227,7 @@ const state = {
   baseColor:"#f7b733", colorB:"#fc4a67", colorC:"#8b5cf6",
   glyphColor:"#ffffff", bgColor:"#cfcbe0",
   glyphText:"☁", svgPath:"", glyphScale:46, furLen:14, density:1.0, seed:72,
-  light:225, glassThick:1.0, puff:1.0, clarity:0.5, frost:0,
+  light:225, glassThick:1.0, puff:1.0, clarity:0.5, frost:0, transp:0,
   uploadImg:null, uploadId:0
 };
 
@@ -784,6 +786,9 @@ function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost)
   let lg=g.createLinearGradient(m.x+m.w*0.15,m.y,m.x+m.w*0.55,m.y+m.h);
   lg.addColorStop(0,shadeA(cA,0,va));lg.addColorStop(0.5,shadeA(cB,0,va));lg.addColorStop(1,shadeA(cC,0,va));
   g.fillStyle=lg;g.fillRect(0,0,S,S);
+  /* core + waves fade out as the glass clears, so a clear icon shows the
+     background through it instead of a milky coloured interior */
+  g.globalAlpha=va;
   /* luminous core */
   const rg=g.createRadialGradient(m.x+m.w*0.42,m.y+m.h*0.30,S*0.02,
                                   m.x+m.w*0.42,m.y+m.h*0.30,m.w*0.70);
@@ -950,7 +955,10 @@ function renderIcon(ctx,S,spec){
        (spec.style==="fluffy"||spec.style==="felt"))
       furFringe(g,S,rng,mask,spec.baseColor);
   }
-  ctx.drawImage(off,0,0);
+  /* overall Transparency — fades the whole icon (body+glyph) so it is
+     genuinely see-through over whatever sits behind it in the app */
+  const iconA=spec.transp===undefined?0:spec.transp;
+  ctx.save();ctx.globalAlpha=Math.max(0,1-iconA);ctx.drawImage(off,0,0);ctx.restore();
 }
 /* apply a recipe object onto a state/spec target */
 function applySpec(sp,target){
@@ -961,7 +969,7 @@ function applySpec(sp,target){
   }
   for(const k of ["style","shape","glyphStyle","bg","baseColor","colorB","colorC",
     "glyphColor","bgColor","glyphText","svgPath","glyphScale","furLen","density","seed",
-    "light","glassThick","puff","clarity","frost"])
+    "light","glassThick","puff","clarity","frost","transp"])
     if(sp[k]!==undefined)target[k]=sp[k];
   if(sp.glyph!==undefined)target.glyphText=sp.glyph;
   return target;
@@ -1029,6 +1037,8 @@ $("clarity").addEventListener("input",e=>{state.clarity=+e.target.value/100;
   $("clarityV").textContent=(+e.target.value/100).toFixed(2);requestRender();});
 $("frost").addEventListener("input",e=>{state.frost=+e.target.value/100;
   $("frostV").textContent=(+e.target.value/100).toFixed(2);requestRender();});
+$("transp").addEventListener("input",e=>{state.transp=+e.target.value/100;
+  $("transpV").textContent=(+e.target.value/100).toFixed(2);requestRender();});
 $("seed").addEventListener("input",e=>{state.seed=parseInt(e.target.value,10)||1;requestRender();});
 $("dice").addEventListener("click",()=>{
   state.seed=Math.floor(Math.random()*99999);
@@ -1094,6 +1104,7 @@ function syncControls(){
   $("glassThick").value=Math.round(state.glassThick*100);$("glassThickV").textContent=state.glassThick.toFixed(1);
   $("clarity").value=Math.round(state.clarity*100);$("clarityV").textContent=state.clarity.toFixed(2);
   $("frost").value=Math.round(state.frost*100);$("frostV").textContent=state.frost.toFixed(2);
+  $("transp").value=Math.round(state.transp*100);$("transpV").textContent=state.transp.toFixed(2);
   $("seed").value=state.seed;
   [["segStyle",state.style],["segShape",state.shape],
    ["segGlyphStyle",state.glyphStyle],["segBg",state.bg]].forEach(([id,v])=>

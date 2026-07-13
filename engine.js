@@ -536,6 +536,9 @@ function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost)
   let lg=g.createLinearGradient(m.x+m.w*0.15,m.y,m.x+m.w*0.55,m.y+m.h);
   lg.addColorStop(0,shadeA(cA,0,va));lg.addColorStop(0.5,shadeA(cB,0,va));lg.addColorStop(1,shadeA(cC,0,va));
   g.fillStyle=lg;g.fillRect(0,0,S,S);
+  /* core + waves fade out as the glass clears, so a clear icon shows the
+     background through it instead of a milky coloured interior */
+  g.globalAlpha=va;
   /* luminous core */
   const rg=g.createRadialGradient(m.x+m.w*0.42,m.y+m.h*0.30,S*0.02,
                                   m.x+m.w*0.42,m.y+m.h*0.30,m.w*0.70);
@@ -702,7 +705,10 @@ function renderIcon(ctx,S,spec){
        (spec.style==="fluffy"||spec.style==="felt"))
       furFringe(g,S,rng,mask,spec.baseColor);
   }
-  ctx.drawImage(off,0,0);
+  /* overall Transparency — fades the whole icon (body+glyph) so it is
+     genuinely see-through over whatever sits behind it in the app */
+  const iconA=spec.transp===undefined?0:spec.transp;
+  ctx.save();ctx.globalAlpha=Math.max(0,1-iconA);ctx.drawImage(off,0,0);ctx.restore();
 }
 /* apply a recipe object onto a state/spec target */
 function applySpec(sp,target){
@@ -713,7 +719,7 @@ function applySpec(sp,target){
   }
   for(const k of ["style","shape","glyphStyle","bg","baseColor","colorB","colorC",
     "glyphColor","bgColor","glyphText","svgPath","glyphScale","furLen","density","seed",
-    "light","glassThick","puff","clarity","frost"])
+    "light","glassThick","puff","clarity","frost","transp"])
     if(sp[k]!==undefined)target[k]=sp[k];
   if(sp.glyph!==undefined)target.glyphText=sp.glyph;
   return target;
