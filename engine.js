@@ -185,12 +185,9 @@ function renderFurBody(g,S,rng,opts){
   const L=furLen*k*(felt?0.5:1.0);
   const ph1=rng()*6.28, ph2=rng()*6.28;
   const lx=-0.55, ly=-0.62;                 /* key light, top-left */
-  const flowAng=(x,y,f)=>{
-    const outw=Math.atan2(y-c,x-c);
-    const swirl=Math.sin(x*0.02/k+ph1)+Math.cos(y*0.017/k+ph2);
-    const eb=Math.min(1,f*f)*0.7;
-    return outw*eb+swirl*(1-eb)+(rng()-0.5)*0.6;
-  };
+  /* even velvet: strands lean toward the light with a wide random spread,
+     no directional flow field (that caused visible seams/patches) */
+  const flowAng=()=> -2.0 + (rng()-0.5)*2.7;
   const sample=()=>{
     const a=rng()*Math.PI*2;
     const ri=Math.floor(a/(Math.PI*2)*radii.length)%radii.length;
@@ -219,12 +216,12 @@ function renderFurBody(g,S,rng,opts){
     const mx=s.x+Math.cos(ang)*len*0.5+Math.cos(ang+1.5708)*bend*0.5;
     const my=s.y+Math.sin(ang)*len*0.5+Math.sin(ang+1.5708)*bend*0.5;
     const ex=s.x+Math.cos(ang)*len, ey=s.y+Math.sin(ang)*len;
-    fg.strokeStyle=ST[(2+rng()*6)|0];fg.lineWidth=1.4*k;
+    fg.strokeStyle=ST[(2+rng()*6)|0];fg.lineWidth=1.3*k;
     fg.beginPath();fg.moveTo(s.x,s.y);fg.quadraticCurveTo(mx,my,ex,ey);fg.stroke();
     /* lit tip — brighter when the strand points toward the light */
     const align=Math.cos(ang)*lx+Math.sin(ang)*ly;
     let ti=(4+align*7+rng()*2)|0;if(ti<0)ti=0;else if(ti>12)ti=12;
-    fg.fillStyle=TP[ti];fg.fillRect(ex-0.75*k,ey-0.75*k,1.6*k,1.6*k);
+    fg.fillStyle=TP[ti];fg.fillRect(ex-0.55*k,ey-0.55*k,1.2*k,1.2*k);
   }
   fg.restore();
   /* soften: blurred coat + a sharper overlay, so strands read as fibre not ink */
@@ -251,11 +248,19 @@ function renderFurBody(g,S,rng,opts){
 function applyLighting(g,S,sheen){
   const f=sheen===undefined?1:sheen;
   g.globalCompositeOperation="source-atop";
-  let gr=g.createRadialGradient(S*0.36,S*0.30,S*0.05,S*0.36,S*0.30,S*0.75);
-  gr.addColorStop(0,`rgba(255,252,240,${0.34*f})`);gr.addColorStop(1,"rgba(255,252,240,0)");
+  /* puffy dome: soft highlight bulging from the top-left */
+  let gr=g.createRadialGradient(S*0.42,S*0.34,S*0.02,S*0.5,S*0.48,S*0.6);
+  gr.addColorStop(0,`rgba(255,255,255,${0.26*f})`);
+  gr.addColorStop(0.5,`rgba(255,255,255,${0.06*f})`);
+  gr.addColorStop(1,"rgba(255,255,255,0)");
   g.fillStyle=gr;g.fillRect(0,0,S,S);
-  gr=g.createRadialGradient(S*0.5,S*0.5,S*0.18,S*0.5,S*0.55,S*0.62);
-  gr.addColorStop(0,"rgba(40,20,8,0)");gr.addColorStop(1,"rgba(40,20,8,0.32)");
+  /* the underside falls into shadow (gives the inflated-cushion read) */
+  gr=g.createLinearGradient(0,S*0.34,0,S);
+  gr.addColorStop(0,"rgba(0,0,0,0)");gr.addColorStop(1,"rgba(0,0,0,0.5)");
+  g.fillStyle=gr;g.fillRect(0,0,S,S);
+  /* soft edge ambient-occlusion ring so it sits like a rounded pad */
+  gr=g.createRadialGradient(S*0.5,S*0.5,S*0.34,S*0.5,S*0.5,S*0.52);
+  gr.addColorStop(0,"rgba(0,0,0,0)");gr.addColorStop(1,"rgba(0,0,0,0.28)");
   g.fillStyle=gr;g.fillRect(0,0,S,S);
   g.globalCompositeOperation="source-over";
 }
