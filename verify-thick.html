@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>thick</title>
+<style>body{margin:0}canvas{display:block}</style></head><body>
+<canvas id="s" width="900" height="360"></canvas>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const SCALE=2,cv=document.getElementById("s");cv.width=900*SCALE;cv.height=360*SCALE;
+const ctx=cv.getContext("2d");ctx.scale(SCALE,SCALE);
+let bg=ctx.createLinearGradient(0,0,0,360);bg.addColorStop(0,"#e9e7f0");bg.addColorStop(1,"#dcdae6");
+ctx.fillStyle=bg;ctx.fillRect(0,0,900,360);
+const base={style:"vividglass",shape:"squircle",glyphStyle:"frosted",bg:"transparent",
+  baseColor:"#f7b733",colorB:"#fc4a67",colorC:"#8b5cf6",glyphColor:"#fff",bgColor:"#ccc",
+  glyphText:"☁",svgPath:"",glyphScale:44,furLen:8,density:1,sheen:1,seed:7,
+  light:225,glassThick:1,puff:1,uploadImg:null,uploadId:0};
+function tile(cx,cy,disp,over){const S=Math.round(disp*SCALE);
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  renderIcon(t.getContext("2d"),S,Object.assign({},base,over));
+  ctx.drawImage(t,cx-disp/2,cy-disp/2,disp,disp);}
+function label(x,y,s){ctx.fillStyle="#555";ctx.font="16px Segoe UI";ctx.textAlign="center";ctx.fillText(s,x,y);}
+tile(150,150,210,{glassThick:0.5});
+tile(410,150,210,{glassThick:1.2});
+tile(680,150,210,{glassThick:2.2});
+label(150,290,"thin 0.5");label(410,290,"medium 1.2");label(680,290,"thick 2.2");
+document.title="EXPORT-READY";
+</script></body></html>

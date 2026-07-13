@@ -412,41 +412,51 @@ function shapeMetrics(type,S){
   if(type==="pill"){const w=S*0.78,h=S*0.40;return{x:c-w/2,y:c-h/2,w,h};}
   const w=S*0.70;return{x:c-w/2,y:c-w/2,w,h:w};
 }
-/* soft coloured glow the glass throws beneath itself (the "light shadow") */
-function glassLightShadow(g,S,path,tint){
+/* the glass block casts a shadow; a taller (thicker) block floats higher and
+   throws a larger, softer, more offset shadow — plus its coloured light-glow */
+function glassLightShadow(g,S,path,tint,thick){
+  const t=thick===undefined?1:thick;
   g.save();
-  g.filter=`blur(${S*0.055}px)`;
-  g.globalAlpha=0.6;
+  /* dark cast shadow — grows and drops further as thickness rises */
+  g.filter=`blur(${S*0.03*(1+0.6*t)}px)`;g.globalAlpha=0.34;
+  g.fillStyle="rgb(22,16,34)";
+  g.save();g.translate(0,S*0.018*t);g.fill(path);g.restore();
+  /* soft coloured glow (light passing through tints the shadow) */
+  g.filter=`blur(${S*0.055}px)`;g.globalAlpha=0.5;
   g.fillStyle=shade(tint,+0.06);
-  g.translate(0,S*0.03);g.scale(1.0,0.97);
-  g.fill(path);
+  g.save();g.translate(0,S*0.03);g.scale(1,0.97);g.fill(path);g.restore();
   g.restore();
 }
-/* thick beveled glass edge + light focusing through the lens.
-   Draws an outer wall rim and an inset inner-surface ring (the gap between
-   them reads as real glass thickness), plus a caustic pooled at the base. */
+/* THICKNESS = height of the glass slab, shown as a 3D beveled edge-wall.
+   The wall (band between the outer edge and the inner top surface) is filled
+   with a chamfer gradient — lit on the top-left, dark on the bottom-right —
+   so a thicker slab shows a taller wall rising up, not a spreading frame. */
 function glassThickness(g,S,path,m,k,lx,ly,thick){
   const cx=S/2,cy=S/2,t=thick===undefined?1:thick;
   lx=lx===undefined?-0.55:lx; ly=ly===undefined?-0.62:ly;
-  const wall=9*k*t;                 /* thickness drives the wall width & inset */
-  const inset=Math.max(0.7,Math.min(0.92,0.885-0.06*t));
+  const bevel=0.09+0.055*t;                 /* wall width as a fraction (modest) */
+  const inset=1-bevel;
   g.save();g.clip(path);
   /* caustic — light focuses through the lens on the side opposite the light */
   g.save();g.filter=`blur(${4*k}px)`;
   const ccx=cx-lx*m.w*0.22, ccy=m.y+m.h*(0.5-ly*0.32);
   const cg=g.createRadialGradient(ccx,ccy,S*0.02,ccx,ccy,m.w*0.55);
-  cg.addColorStop(0,"rgba(255,255,255,0.45)");cg.addColorStop(1,"rgba(255,255,255,0)");
+  cg.addColorStop(0,"rgba(255,255,255,0.4)");cg.addColorStop(1,"rgba(255,255,255,0)");
   g.fillStyle=cg;g.fillRect(0,0,S,S);g.filter="none";g.restore();
-  /* outer wall — thick directional rim, brightest on the light side */
-  let lg=g.createLinearGradient(S/2+lx*m.w*0.5,S/2+ly*m.h*0.5,S/2-lx*m.w*0.5,S/2-ly*m.h*0.5);
-  lg.addColorStop(0,"rgba(255,255,255,0.95)");
-  lg.addColorStop(0.45,"rgba(255,255,255,0.18)");
-  lg.addColorStop(1,"rgba(255,255,255,0.6)");
-  g.strokeStyle=lg;g.lineWidth=wall;g.stroke(path);
-  /* inner surface ring, inset by thickness — the second edge = visible depth */
+  /* the beveled wall: fill the ring between outer edge and inner surface */
+  const inner=new DOMMatrix().translateSelf(cx,cy).scaleSelf(inset,inset).translateSelf(-cx,-cy);
+  const ring=new Path2D();ring.addPath(path);ring.addPath(path,inner);
+  let wg=g.createLinearGradient(S/2+lx*m.w*0.55,S/2+ly*m.h*0.55,S/2-lx*m.w*0.55,S/2-ly*m.h*0.55);
+  wg.addColorStop(0,"rgba(255,255,255,0.85)");   /* top face of the wall, lit */
+  wg.addColorStop(0.42,"rgba(255,255,255,0.14)");
+  wg.addColorStop(0.6,"rgba(0,0,0,0.12)");
+  wg.addColorStop(1,"rgba(18,12,32,0.5)");        /* under-lit wall, in shadow */
+  g.fillStyle=wg;g.fill(ring,"evenodd");
+  /* crisp top ridge (outer) and a bright inner-surface edge */
+  g.strokeStyle="rgba(255,255,255,0.55)";g.lineWidth=2.2*k;g.stroke(path);
   g.save();g.translate(cx,cy);g.scale(inset,inset);g.translate(-cx,-cy);
-  g.strokeStyle="rgba(12,10,26,0.24)";g.lineWidth=7*k*t;g.stroke(path);   /* refraction shadow */
-  g.strokeStyle="rgba(255,255,255,0.55)";g.lineWidth=2.6*k;g.stroke(path); /* inner highlight */
+  g.strokeStyle="rgba(255,255,255,0.6)";g.lineWidth=2*k;g.stroke(path);
+  g.strokeStyle="rgba(8,6,18,0.2)";g.lineWidth=1.4*k;g.stroke(path);
   g.restore();
   g.restore();
 }
@@ -465,7 +475,7 @@ function glassGloss(g,S,path,m,k,lx,ly){
 }
 function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick){
   const k=S/512,m=shapeMetrics(shape,S);
-  glassLightShadow(g,S,path,cB);
+  glassLightShadow(g,S,path,cB,thick);
   /* soft drop shadow + body tint */
   g.save();
   g.shadowColor="rgba(25,18,35,0.35)";g.shadowBlur=S*0.035;g.shadowOffsetY=S*0.02;
@@ -492,7 +502,7 @@ function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick){
 /* vivid gradient glass — tri-colour body, wave layers, thick luminous rim */
 function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick){
   const k=S/512,m=shapeMetrics(shape,S);
-  glassLightShadow(g,S,path,cB);
+  glassLightShadow(g,S,path,cB,thick);
   /* deep soft shadow */
   g.save();
   g.shadowColor="rgba(60,40,100,0.45)";g.shadowBlur=S*0.05;g.shadowOffsetY=S*0.028;
