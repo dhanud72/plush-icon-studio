@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Night Fur — showcase sheet</title>
+<style>body{margin:0;background:#151313}canvas{display:block}</style>
+</head>
+<body>
+<canvas id="sheet" width="736" height="1104"></canvas>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const ctx=document.getElementById("sheet").getContext("2d");
+const W=736,H=1104;
+
+/* Material Design icon paths (24x24) */
+const P={
+  wifi:"M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.07 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z",
+  bt:"M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z",
+  bell:"M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z",
+  clock:"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm1-13h-2v6l4 2.5 1-1.64-3-1.86z",
+  flash:"M6 2h12v3H6zm0 5v1l2 2v12h8V10l2-2V7H6zm6 8.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z",
+  dial:"M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 4a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 9 7zm6 0a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 15 7zm-6 5a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 9 12zm6 0a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 0 0 0-2.6zm-6 5a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 9 17zm6 0a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 0 0 0-2.6z",
+  cam:"M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  vol:"M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+};
+
+const NIGHT={style:"fluffy",shape:"circle",glyphStyle:"stitched",bg:"transparent",
+  baseColor:"#211e1f",colorB:"#211e1f",colorC:"#211e1f",glyphColor:"#d6d0c6",
+  bgColor:"#151313",glyphText:"",svgPath:"",glyphScale:44,furLen:11,density:1.25,
+  seed:9,uploadImg:null,uploadId:0};
+
+/* dark bokeh backdrop */
+{
+  const lg=ctx.createLinearGradient(0,0,0,H);
+  lg.addColorStop(0,"#201d1d");lg.addColorStop(1,"#141212");
+  ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);
+  const rng=mulberry32(4);
+  for(let i=0;i<9;i++){
+    const x=rng()*W,y=rng()*H,r=60+rng()*130;
+    const b=ctx.createRadialGradient(x,y,0,x,y,r);
+    b.addColorStop(0,"rgba(255,250,240,0.045)");b.addColorStop(1,"rgba(255,250,240,0)");
+    ctx.fillStyle=b;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  }
+}
+
+/* place a rendered component, centre-anchored, optional rotation */
+function comp(over,disp){
+  const S=Math.round(disp);
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  renderIcon(t.getContext("2d"),S,Object.assign({},NIGHT,over));
+  return t;
+}
+function place(cx,cy,disp,over,rot,shadow){
+  const t=comp(over||{},disp);
+  ctx.save();
+  if(shadow!==false){ctx.shadowColor="rgba(0,0,0,0.55)";ctx.shadowBlur=22;ctx.shadowOffsetY=12;}
+  ctx.translate(cx,cy);if(rot)ctx.rotate(rot);
+  ctx.drawImage(t,-disp/2,-disp/2,disp,disp);
+  ctx.restore();
+}
+/* stamp a lone glyph / text piece (no body) */
+function stamp(cx,cy,widthPx,glyph,style,rot,color){
+  const S=Math.round(widthPx*2);
+  const sp=Object.assign({},NIGHT,{glyphScale:88,glyphStyle:style||"stitched",
+    glyphColor:color||NIGHT.glyphColor});
+  if(glyph.length>30&&glyph[0]==="M"){sp.svgPath=glyph;sp.glyphText="";}
+  else{sp.glyphText=glyph;sp.svgPath="";}
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  const g=t.getContext("2d");
+  const mask=buildGlyphMask(S,sp),rng=mulberry32(7);
+  if(mask){
+    if(sp.glyphStyle==="raised")drawGlyphRaised(g,S,rng,mask,sp.glyphColor);
+    else if(sp.glyphStyle==="flocked")drawGlyphFlocked(g,S,rng,mask,sp.glyphColor,10,1);
+    else drawGlyphStitched(g,S,rng,mask,sp.glyphColor);
+  }
+  ctx.save();ctx.translate(cx,cy);if(rot)ctx.rotate(rot);
+  ctx.drawImage(t,-widthPx/2,-widthPx/2,widthPx,widthPx);
+  ctx.restore();
+}
+
+/* ── row 1: quick-settings tile ── */
+place(210,300,357,{shape:"squircle"});
+place(155,245,150,{svgPath:"M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z",glyphText:"",glyphScale:42},0,false);
+place(265,245,150,{glyphText:"⇅",glyphScale:46},0,false);
+place(155,355,150,{svgPath:P.wifi,glyphText:"",glyphScale:44},0,false);
+place(265,355,150,{svgPath:P.bt,glyphText:"",glyphScale:42},0,false);
+
+/* ── row 1: music tile with embroidery ── */
+place(525,300,357,{shape:"squircle"});
+stamp(560,238,150,"Unknown","raised");
+stamp(560,272,150,"Unknown","raised");
+stamp(452,222,40,"❀","stitched",-0.3);
+stamp(430,300,34,"✿","stitched",0.4);
+stamp(520,352,64,"✿","stitched",0.1);
+stamp(590,368,38,"❀","stitched",0.7);
+stamp(612,225,30,"✿","stitched",0.2);
+
+/* ── row 2 ── */
+place(150,540,164,{svgPath:P.bell,glyphText:"",glyphScale:46});
+place(287,522,134,{glyphText:"╱",glyphScale:34});
+/* brightness pill: vertical two-tone with knob */
+place(430,570,250,{shape:"pill",glyphText:""},Math.PI/2);
+{ /* darker lower half (right half of the horizontal pill, pre-rotation) */
+  const t=comp({shape:"pill",baseColor:"#1c1a1a",glyphText:""},250);
+  const g=t.getContext("2d");
+  g.globalCompositeOperation="destination-in";
+  const lg=g.createLinearGradient(115,0,135,0);
+  lg.addColorStop(0,"rgba(0,0,0,0)");lg.addColorStop(1,"rgba(0,0,0,1)");
+  g.fillStyle=lg;g.fillRect(0,0,250,250);
+  ctx.save();ctx.translate(430,570);ctx.rotate(Math.PI/2);
+  ctx.drawImage(t,-125,-125,250,250);ctx.restore();
+}
+stamp(430,635,42,"●","raised",0,"#efe9df");
+/* tall flower pill */
+place(600,570,250,{shape:"pill",glyphText:""},Math.PI/2);
+stamp(600,505,42,"✿","stitched",0.2);
+stamp(586,545,34,"❀","stitched",-0.4);
+stamp(606,585,30,"✿","stitched",0.5);
+stamp(600,648,40,P.vol,"stitched");
+
+/* ── row 3: do-not-disturb pill ── */
+place(255,760,423,{shape:"pill",glyphText:""});
+place(148,760,132,{glyphText:"☾",glyphScale:44},0,false);
+stamp(285,728,108,"Do Not","raised");
+stamp(292,762,120,"Disturb","raised");
+stamp(245,795,46,"On","raised");
+stamp(372,780,44,"✿","stitched",0.3);
+
+/* ── row 4 ── */
+place(150,920,164,{svgPath:P.flash,glyphText:"",glyphScale:42});
+place(300,920,164,{svgPath:P.clock,glyphText:"",glyphScale:46});
+place(450,920,164,{svgPath:P.dial,glyphText:"",glyphScale:42});
+place(600,920,164,{svgPath:P.cam,glyphText:"",glyphScale:46});
+
+/* ── row 5 ── */
+place(300,1042,150,{glyphText:"✿",glyphScale:44,glyphStyle:"flocked",glyphColor:"#3a3434"});
+place(450,1042,150,{glyphText:"⊂",glyphScale:40});
+place(600,1042,150,{glyphText:"O",glyphScale:42});
+
+document.title="EXPORT-READY";
+</script>
+</body>
+</html>
