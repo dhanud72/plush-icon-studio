@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>clear</title>
+<style>body{margin:0}canvas{display:block}</style></head><body>
+<canvas id="s" width="740" height="420"></canvas>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const SCALE=2,cv=document.getElementById("s");cv.width=740*SCALE;cv.height=420*SCALE;
+const ctx=cv.getContext("2d");ctx.scale(SCALE,SCALE);
+/* green nature-ish blurred backdrop so we can see the glass being see-through */
+let bg=ctx.createLinearGradient(0,0,300,420);
+bg.addColorStop(0,"#8fae63");bg.addColorStop(0.5,"#6f9a4e");bg.addColorStop(1,"#a9c06a");
+ctx.fillStyle=bg;ctx.fillRect(0,0,740,420);
+const rng=mulberry32(3);
+for(let i=0;i<24;i++){const x=rng()*740,y=rng()*420,r=8+rng()*26;
+  ctx.fillStyle=["rgba(230,180,210,.5)","rgba(255,240,180,.5)","rgba(180,210,150,.6)","rgba(200,160,220,.45)"][i%4];
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+ctx.fillStyle="rgba(120,150,90,.25)";ctx.fillRect(0,0,740,420);
+const base={style:"glass",shape:"circle",glyphStyle:"raised",bg:"transparent",
+  baseColor:"#eaf3e0",colorB:"#d6e6c8",colorC:"#c2d8b0",glyphColor:"#2f6b3f",bgColor:"#ccc",
+  glyphText:"",svgPath:"",glyphScale:44,furLen:8,density:1,sheen:1,seed:7,
+  light:225,glassThick:1.1,puff:1,clarity:0.5,uploadImg:null,uploadId:0};
+const wifi="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.07 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z";
+function tile(cx,cy,disp,over){const S=Math.round(disp*SCALE);
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  renderIcon(t.getContext("2d"),S,Object.assign({},base,over));
+  ctx.drawImage(t,cx-disp/2,cy-disp/2,disp,disp);}
+function label(x,y,s){ctx.fillStyle="#20340f";ctx.font="15px Segoe UI";ctx.textAlign="center";ctx.fillText(s,x,y);}
+tile(120,150,180,{clarity:0.95,svgPath:wifi});
+tile(320,150,180,{clarity:0.6,svgPath:wifi});
+tile(520,150,180,{clarity:0.15,baseColor:"#2f9e44",colorB:"#40c057",colorC:"#1d6b2e",glyphColor:"#eaffea",svgPath:wifi});
+tile(660,150,150,{style:"vividglass",shape:"squircle",clarity:0.85,baseColor:"#5de0c0",colorB:"#4aa3f0",colorC:"#9b5de5",glyph:"☁"});
+label(120,270,"clarity 0.95 (clear)");label(320,270,"0.6");label(520,270,"0.15 (solid)");label(660,270,"vivid clear");
+document.title="EXPORT-READY";
+</script></body></html>
