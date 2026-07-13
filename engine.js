@@ -466,23 +466,36 @@ function glassThickness(g,S,path,m,k,lx,ly,thick){
   g.strokeStyle=hg;g.lineWidth=3.2*k;g.stroke(path);
   g.restore();
 }
-function glassGloss(g,S,path,m,k,lx,ly){
+function glassGloss(g,S,path,m,k,lx,ly,frost){
   lx=lx===undefined?-0.55:lx; ly=ly===undefined?-0.62:ly;
+  const fr=frost===undefined?0:frost;
   g.save();g.clip(path);
   const gx=m.x+m.w*(0.5+lx*0.24), gy=m.y+m.h*(0.13+Math.max(0,-ly-0.3)*0.1);
+  /* broad sheen (softer when frosted) */
   const gl=g.createLinearGradient(0,m.y+m.h*0.02,0,m.y+m.h*0.28);
-  gl.addColorStop(0,"rgba(255,255,255,0.6)");gl.addColorStop(1,"rgba(255,255,255,0)");
+  gl.addColorStop(0,`rgba(255,255,255,${0.6*(1-0.5*fr)})`);gl.addColorStop(1,"rgba(255,255,255,0)");
   g.fillStyle=gl;
   g.beginPath();g.ellipse(m.x+m.w*0.5,m.y+m.h*0.13,m.w*0.42,m.h*0.11,0,0,Math.PI*2);g.fill();
-  g.filter=`blur(${1.2*k}px)`;g.fillStyle="rgba(255,255,255,0.95)";
+  /* sharp specular hotspot — frost diffuses it, so fade & blur it out */
+  g.filter=`blur(${(1.2+6*fr)*k}px)`;g.fillStyle=`rgba(255,255,255,${0.95*(1-0.85*fr)})`;
   g.beginPath();g.ellipse(gx,gy,6*k,3.5*k,-0.5,0,Math.PI*2);g.fill();
   g.filter="none";
   g.restore();
 }
-function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity){
+/* frosted / ground-glass veil — milky, diffuse; more frost = more opaque-milky */
+function glassFrost(g,S,path,m,k,frost){
+  if(!frost||frost<=0.01)return;
+  g.save();g.clip(path);
+  const fg=g.createLinearGradient(0,m.y,0,m.y+m.h);
+  fg.addColorStop(0,`rgba(252,253,255,${0.6*frost})`);
+  fg.addColorStop(1,`rgba(238,242,249,${0.46*frost})`);
+  g.fillStyle=fg;g.fillRect(0,0,S,S);
+  g.restore();
+}
+function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost){
   const k=S/512,m=shapeMetrics(shape,S);
   const cl=clarity===undefined?0.5:clarity, jelly=mode==="jelly";
-  const bodyA=jelly?0.9:(0.13+(1-cl)*0.6);   /* glass: clear (0.13) … opaque (0.73) */
+  const bodyA=jelly?0.9:(0.02+(1-cl)*0.7);   /* glass: fully clear (0.02) … opaque (0.72) */
   glassLightShadow(g,S,path,cB,thick);
   g.save();
   g.shadowColor="rgba(25,18,35,0.35)";g.shadowBlur=S*0.035;g.shadowOffsetY=S*0.02;
@@ -503,14 +516,15 @@ function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity){
   }
   g.fillStyle=lg;g.fillRect(0,0,S,S);
   g.restore();
+  glassFrost(g,S,path,m,k,frost);
   glassThickness(g,S,path,m,k,lx,ly,thick);
-  glassGloss(g,S,path,m,k,lx,ly);
+  glassGloss(g,S,path,m,k,lx,ly,frost);
 }
 /* vivid gradient glass — tri-colour body, wave layers, thick luminous rim */
-function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity){
+function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost){
   const k=S/512,m=shapeMetrics(shape,S);
   const cl=clarity===undefined?0.5:clarity;
-  const va=0.42+(1-cl)*0.58;                 /* vivid: translucent … opaque */
+  const va=0.1+(1-cl)*0.87;                  /* vivid: near-clear … opaque */
   glassLightShadow(g,S,path,cB,thick);
   /* deep soft shadow */
   g.save();
@@ -545,8 +559,9 @@ function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity){
     g.fillStyle=wg;g.fill();
   }
   g.restore();
+  glassFrost(g,S,path,m,k,frost);
   glassThickness(g,S,path,m,k,lx,ly,thick);
-  glassGloss(g,S,path,m,k,lx,ly);
+  glassGloss(g,S,path,m,k,lx,ly,frost);
 }
 /* glass case over a fur body */
 function glassOverlay(g,S,path,shape){
@@ -650,13 +665,14 @@ function renderIcon(ctx,S,spec){
   const thick=spec.glassThick===undefined?1:spec.glassThick;
   const puff=spec.puff===undefined?1:spec.puff;
   const clarity=spec.clarity===undefined?0.5:spec.clarity;   /* 0 opaque … 1 clear */
+  const frost=spec.frost===undefined?0:spec.frost;           /* 0 clear … 1 milky */
 
   if(spec.style==="clay"){
     renderClayBody(g,S,path,spec.baseColor);
   }else if(spec.style==="vividglass"){
-    renderVividGlass(g,S,rng,path,spec.shape,spec.baseColor,spec.colorB,spec.colorC,lx,ly,thick,clarity);
+    renderVividGlass(g,S,rng,path,spec.shape,spec.baseColor,spec.colorB,spec.colorC,lx,ly,thick,clarity,frost);
   }else if(spec.style==="glass"||spec.style==="jelly"){
-    renderGlassBody(g,S,path,spec.baseColor,spec.colorB,spec.colorC,spec.style,spec.shape,lx,ly,thick,clarity);
+    renderGlassBody(g,S,path,spec.baseColor,spec.colorB,spec.colorC,spec.style,spec.shape,lx,ly,thick,clarity,frost);
   }else{
     const contained=spec.style==="furglass";
     renderFurBody(g,S,rng,{path,radii,base:spec.baseColor,
@@ -697,7 +713,7 @@ function applySpec(sp,target){
   }
   for(const k of ["style","shape","glyphStyle","bg","baseColor","colorB","colorC",
     "glyphColor","bgColor","glyphText","svgPath","glyphScale","furLen","density","seed",
-    "light","glassThick","puff","clarity"])
+    "light","glassThick","puff","clarity","frost"])
     if(sp[k]!==undefined)target[k]=sp[k];
   if(sp.glyph!==undefined)target.glyphText=sp.glyph;
   return target;
