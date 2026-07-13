@@ -500,10 +500,11 @@ function renderFurBody(g,S,rng,opts){
     }
   }
 }
-function applyLighting(g,S){
+function applyLighting(g,S,sheen){
+  const f=sheen===undefined?1:sheen;
   g.globalCompositeOperation="source-atop";
   let gr=g.createRadialGradient(S*0.36,S*0.30,S*0.05,S*0.36,S*0.30,S*0.75);
-  gr.addColorStop(0,"rgba(255,252,240,0.34)");gr.addColorStop(1,"rgba(255,252,240,0)");
+  gr.addColorStop(0,`rgba(255,252,240,${0.34*f})`);gr.addColorStop(1,"rgba(255,252,240,0)");
   g.fillStyle=gr;g.fillRect(0,0,S,S);
   gr=g.createRadialGradient(S*0.5,S*0.5,S*0.18,S*0.5,S*0.55,S*0.62);
   gr.addColorStop(0,"rgba(40,20,8,0)");gr.addColorStop(1,"rgba(40,20,8,0.32)");
@@ -553,7 +554,10 @@ function drawGlyphStitched(g,S,rng,mask,color){
   g.save();g.globalAlpha=0.30;
   g.drawImage(tintMask(mask,"rgba(30,15,5,1)"),1.5*k,2.5*k);
   g.restore();
-  const step=3*k,ang=-Math.PI/4,len=4.2*k;
+  /* solid satin underlay so stitches read as thick embroidery, not speckle */
+  g.save();g.globalAlpha=0.85;
+  g.drawImage(tintMask(mask,shade(color,-0.10)),0,0);g.restore();
+  const step=2.6*k,ang=-Math.PI/4,len=3.8*k;
   const bb=mask.bbox||{x:0,y:0,w:S,h:S};
   for(let y=bb.y;y<bb.y+bb.h;y+=step){
     for(let x=bb.x;x<bb.x+bb.w;x+=step){
@@ -561,7 +565,7 @@ function drawGlyphStitched(g,S,rng,mask,color){
       if(maskAt(mask,jx,jy)<110)continue;
       const a=ang+(rng()-0.5)*0.25, l=len*(0.8+rng()*0.5);
       g.strokeStyle=shadeA(color,(rng()-0.5)*0.12,0.9);
-      g.lineWidth=1.6*k;g.lineCap="round";
+      g.lineWidth=1.8*k;g.lineCap="round";
       g.beginPath();
       g.moveTo(jx-Math.cos(a)*l/2,jy-Math.sin(a)*l/2);
       g.lineTo(jx+Math.cos(a)*l/2,jy+Math.sin(a)*l/2);
@@ -813,7 +817,7 @@ function renderIcon(ctx,S,spec){
     renderFurBody(g,S,rng,{path,radii,base:spec.baseColor,
       furLen:spec.furLen*(contained?0.8:1),density:spec.density,
       felt:spec.style==="felt",contained});
-    applyLighting(g,S);
+    applyLighting(g,S,spec.sheen);
     if(contained)glassOverlay(g,S,path,spec.shape);
   }
 

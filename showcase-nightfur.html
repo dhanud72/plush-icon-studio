@@ -26,22 +26,25 @@ const P={
 };
 
 const NIGHT={style:"fluffy",shape:"circle",glyphStyle:"stitched",bg:"transparent",
-  baseColor:"#211e1f",colorB:"#211e1f",colorC:"#211e1f",glyphColor:"#d6d0c6",
-  bgColor:"#151313",glyphText:"",svgPath:"",glyphScale:44,furLen:11,density:1.25,
-  seed:9,uploadImg:null,uploadId:0};
+  baseColor:"#1b1819",colorB:"#1b1819",colorC:"#1b1819",glyphColor:"#d6d0c6",
+  bgColor:"#151313",glyphText:"",svgPath:"",glyphScale:44,furLen:9,density:1.35,
+  sheen:0.55,seed:9,uploadImg:null,uploadId:0};
 
-/* dark bokeh backdrop */
+/* dark depth-of-field backdrop: big soft bokeh + corner vignette */
 {
   const lg=ctx.createLinearGradient(0,0,0,H);
-  lg.addColorStop(0,"#201d1d");lg.addColorStop(1,"#141212");
+  lg.addColorStop(0,"#232020");lg.addColorStop(1,"#131111");
   ctx.fillStyle=lg;ctx.fillRect(0,0,W,H);
   const rng=mulberry32(4);
-  for(let i=0;i<9;i++){
-    const x=rng()*W,y=rng()*H,r=60+rng()*130;
-    const b=ctx.createRadialGradient(x,y,0,x,y,r);
-    b.addColorStop(0,"rgba(255,250,240,0.045)");b.addColorStop(1,"rgba(255,250,240,0)");
+  for(let i=0;i<6;i++){
+    const x=rng()*W,y=rng()*H,r=130+rng()*200;
+    const b=ctx.createRadialGradient(x,y,r*0.4,x,y,r);
+    b.addColorStop(0,"rgba(255,250,240,0.06)");b.addColorStop(1,"rgba(255,250,240,0)");
     ctx.fillStyle=b;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
   }
+  const v=ctx.createRadialGradient(W/2,H/2,H*0.25,W/2,H/2,H*0.75);
+  v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,"rgba(0,0,0,0.42)");
+  ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
 }
 
 /* place a rendered component, centre-anchored, optional rotation */
@@ -86,38 +89,50 @@ place(265,245,150,{glyphText:"⇅",glyphScale:46},0,false);
 place(155,355,150,{svgPath:P.wifi,glyphText:"",glyphScale:44},0,false);
 place(265,355,150,{svgPath:P.bt,glyphText:"",glyphScale:42},0,false);
 
+/* tone-on-tone embossed flower cluster, like dark embroidery */
+function cluster(cx,cy,k,rot){
+  const F=[
+    ["✿",66,-0.2,"#5a5249"],["❀",42,0.5,"#4f4841"],["✿",32,0.9,"#463f38"],
+    ["❧",46,0.3+(rot||0),"#413a34"],["❀",26,-0.6,"#5f574d"],["✿",22,1.2,"#4a433c"]
+  ];
+  const DX=[-30,26,56,-6,42,-44],DY=[0,-24,14,34,32,-30];
+  F.forEach((f,i)=>stamp(cx+DX[i]*k,cy+DY[i]*k,f[1]*k,f[0],"stitched",f[2],f[3]));
+}
+
 /* ── row 1: music tile with embroidery ── */
 place(525,300,357,{shape:"squircle"});
 stamp(560,238,150,"Unknown","raised");
 stamp(560,272,150,"Unknown","raised");
-stamp(452,222,40,"❀","stitched",-0.3);
-stamp(430,300,34,"✿","stitched",0.4);
-stamp(520,352,64,"✿","stitched",0.1);
-stamp(590,368,38,"❀","stitched",0.7);
-stamp(612,225,30,"✿","stitched",0.2);
+cluster(505,362,1.05);
+cluster(438,222,0.5,0.8);
+stamp(630,320,44,"❀","raised",0.4,"#453e39");
 
 /* ── row 2 ── */
 place(150,540,164,{svgPath:P.bell,glyphText:"",glyphScale:46});
 place(287,522,134,{glyphText:"╱",glyphScale:34});
-/* brightness pill: vertical two-tone with knob */
+/* brightness pill: fuzzy top, smooth velvet bottom, oval knob */
 place(430,570,250,{shape:"pill",glyphText:""},Math.PI/2);
-{ /* darker lower half (right half of the horizontal pill, pre-rotation) */
-  const t=comp({shape:"pill",baseColor:"#1c1a1a",glyphText:""},250);
+{ /* short-fur velvet lower half — right half of the horizontal pill, pre-rotation */
+  const t=comp({shape:"pill",style:"felt",baseColor:"#141213",sheen:0.35,glyphText:""},250);
   const g=t.getContext("2d");
   g.globalCompositeOperation="destination-in";
-  const lg=g.createLinearGradient(115,0,135,0);
+  const lg=g.createLinearGradient(118,0,132,0);
   lg.addColorStop(0,"rgba(0,0,0,0)");lg.addColorStop(1,"rgba(0,0,0,1)");
   g.fillStyle=lg;g.fillRect(0,0,250,250);
   ctx.save();ctx.translate(430,570);ctx.rotate(Math.PI/2);
   ctx.drawImage(t,-125,-125,250,250);ctx.restore();
 }
-stamp(430,635,42,"●","raised",0,"#efe9df");
+{ /* oval knob */
+  ctx.save();ctx.translate(430,638);
+  ctx.shadowColor="rgba(0,0,0,0.5)";ctx.shadowBlur=8;ctx.shadowOffsetY=3;
+  ctx.fillStyle="#efe9df";
+  ctx.beginPath();ctx.ellipse(0,0,15,21,0,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
 /* tall flower pill */
 place(600,570,250,{shape:"pill",glyphText:""},Math.PI/2);
-stamp(600,505,42,"✿","stitched",0.2);
-stamp(586,545,34,"❀","stitched",-0.4);
-stamp(606,585,30,"✿","stitched",0.5);
-stamp(600,648,40,P.vol,"stitched");
+cluster(600,545,0.78,0.6);
+stamp(600,652,42,P.vol,"stitched");
 
 /* ── row 3: do-not-disturb pill ── */
 place(255,760,423,{shape:"pill",glyphText:""});
@@ -125,7 +140,7 @@ place(148,760,132,{glyphText:"☾",glyphScale:44},0,false);
 stamp(285,728,108,"Do Not","raised");
 stamp(292,762,120,"Disturb","raised");
 stamp(245,795,46,"On","raised");
-stamp(372,780,44,"✿","stitched",0.3);
+cluster(372,770,0.5,0.5);
 
 /* ── row 4 ── */
 place(150,920,164,{svgPath:P.flash,glyphText:"",glyphScale:42});
@@ -134,7 +149,7 @@ place(450,920,164,{svgPath:P.dial,glyphText:"",glyphScale:42});
 place(600,920,164,{svgPath:P.cam,glyphText:"",glyphScale:46});
 
 /* ── row 5 ── */
-place(300,1042,150,{glyphText:"✿",glyphScale:44,glyphStyle:"flocked",glyphColor:"#3a3434"});
+place(300,1042,150,{glyphText:"✿",glyphScale:50,glyphStyle:"stitched",glyphColor:"#514a42"});
 place(450,1042,150,{glyphText:"⊂",glyphScale:40});
 place(600,1042,150,{glyphText:"O",glyphScale:42});
 
