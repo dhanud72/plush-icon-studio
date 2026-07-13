@@ -25,10 +25,92 @@ const P={
   vol:"M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
 };
 
-const NIGHT={style:"fluffy",shape:"circle",glyphStyle:"stitched",bg:"transparent",
-  baseColor:"#1b1819",colorB:"#1b1819",colorC:"#1b1819",glyphColor:"#d6d0c6",
+const NIGHT={style:"fluffy",shape:"circle",glyphStyle:"satin",bg:"transparent",
+  baseColor:"#1b1819",colorB:"#1b1819",colorC:"#1b1819",glyphColor:"#e9e5db",
   bgColor:"#151313",glyphText:"",svgPath:"",glyphScale:44,furLen:9,density:1.35,
   sheen:0.55,seed:9,uploadImg:null,uploadId:0};
+const PETAL="#262220",PET_HI="rgb(78,72,64)",PET_LO="rgb(8,6,5)";
+
+/* ---- embossed botanical flowers (filled teardrop petals) ---- */
+function petal(g,cx,cy,r,ang){
+  g.save();g.translate(cx,cy);g.rotate(ang);
+  g.beginPath();g.moveTo(0,0);
+  g.quadraticCurveTo(-r*0.5,-r*0.55,0,-r*1.15);
+  g.quadraticCurveTo(r*0.5,-r*0.55,0,0);
+  g.closePath();g.fill();g.restore();
+}
+function blossom(g,cx,cy,r,petals,rot){
+  petals=petals||5;rot=rot||0;
+  for(let i=0;i<petals;i++)petal(g,cx,cy,r,rot+i/petals*Math.PI*2);
+  g.save();g.globalCompositeOperation="destination-out";
+  g.beginPath();g.arc(cx,cy,r*0.24,0,Math.PI*2);g.fill();g.restore();
+  g.beginPath();g.arc(cx,cy,r*0.15,0,Math.PI*2);g.fill();
+}
+function bud(g,cx,cy,r,ang){
+  g.save();g.translate(cx,cy);g.rotate(ang||0);
+  g.beginPath();g.ellipse(0,0,r*0.5,r*0.78,0,0,Math.PI*2);g.fill();g.restore();
+}
+function leaf(g,cx,cy,len,ang){
+  g.save();g.translate(cx,cy);g.rotate(ang);
+  g.beginPath();g.ellipse(0,len*0.5,len*0.22,len*0.5,0,0,Math.PI*2);g.fill();
+  g.save();g.globalCompositeOperation="destination-out";g.lineWidth=Math.max(1.5,len*0.03);
+  g.beginPath();g.moveTo(0,len*0.06);g.lineTo(0,len*0.94);g.stroke();g.restore();
+  g.restore();
+}
+function stem(g,x1,y1,cxp,cyp,x2,y2,w){
+  g.lineWidth=w;g.lineCap="round";
+  g.beginPath();g.moveTo(x1,y1);g.quadraticCurveTo(cxp,cyp,x2,y2);g.stroke();
+}
+function rr(c,x,y,w,h,r){c.beginPath();
+  if(c.roundRect)c.roundRect(x,y,w,h,r);
+  else{c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}}
+/* draw() fills black flower shapes; emboss tone-on-tone (highlight top-left,
+   shadow bottom-right), clip to the host tile, blit centred at (cx,cy) */
+function embroider(cx,cy,SM,draw,rot,clip){
+  const c=document.createElement("canvas");c.width=SM;c.height=SM;
+  const g=c.getContext("2d");g.fillStyle="#000";g.strokeStyle="#000";
+  draw(g);
+  const mask={canvas:c,S:SM};mask.bbox=alphaBBox(g,SM);
+  if(!mask.bbox)return;
+  const out=document.createElement("canvas");out.width=SM;out.height=SM;
+  const og=out.getContext("2d");
+  og.save();og.globalAlpha=0.55;og.filter=`blur(2px)`;
+  og.drawImage(tintMask(mask,"rgb(0,0,0)"),1.5,3);og.restore();
+  og.drawImage(tintMask(mask,PETAL),0,0);
+  og.globalCompositeOperation="source-atop";
+  og.globalAlpha=0.7;og.drawImage(tintMask(mask,PET_HI),-1.6,-1.6);
+  og.globalAlpha=0.6;og.drawImage(tintMask(mask,PET_LO),1.6,2);
+  og.globalCompositeOperation="source-over";og.globalAlpha=1;
+  ctx.save();
+  if(clip){rr(ctx,clip.x,clip.y,clip.w,clip.h,clip.r);ctx.clip();}
+  ctx.translate(cx,cy);if(rot)ctx.rotate(rot);
+  ctx.drawImage(out,-SM/2,-SM/2);ctx.restore();
+}
+/* full bouquet in a 300-box: stems from bottom, blossoms, buds, leaves */
+function bouquet(g){
+  stem(g,150,270,140,200,120,130,5);
+  stem(g,150,270,175,205,205,155,5);
+  stem(g,150,265,125,195,100,120,4);
+  leaf(g,150,225,50,-0.5);leaf(g,172,210,44,0.7);leaf(g,128,195,38,-1.0);
+  blossom(g,118,130,54,5,0.2);
+  blossom(g,205,150,40,6,0.5);
+  blossom(g,100,110,28,5,0);
+  bud(g,222,105,22,-0.5);bud(g,80,80,18,0.3);
+}
+function sprig(g){ /* vertical single-stem for the tall pill */
+  stem(g,95,255,95,175,95,95,5);
+  leaf(g,95,210,42,-0.6);leaf(g,95,195,38,0.6);
+  blossom(g,95,90,46,5,0.2);
+  blossom(g,122,140,26,5,0.4);
+  bud(g,66,120,16,-0.3);
+}
+function smallSprig(g){
+  stem(g,72,150,82,110,92,72,4);
+  leaf(g,82,120,32,0.5);
+  blossom(g,92,68,38,5,0.2);
+  bud(g,58,96,15,-0.4);
+}
 
 /* dark depth-of-field backdrop: big soft bokeh + corner vignette */
 {
@@ -89,23 +171,14 @@ place(265,245,150,{glyphText:"⇅",glyphScale:46},0,false);
 place(155,355,150,{svgPath:P.wifi,glyphText:"",glyphScale:44},0,false);
 place(265,355,150,{svgPath:P.bt,glyphText:"",glyphScale:42},0,false);
 
-/* tone-on-tone embossed flower cluster, like dark embroidery */
-function cluster(cx,cy,k,rot){
-  const F=[
-    ["✿",66,-0.2,"#5a5249"],["❀",42,0.5,"#4f4841"],["✿",32,0.9,"#463f38"],
-    ["❧",46,0.3+(rot||0),"#413a34"],["❀",26,-0.6,"#5f574d"],["✿",22,1.2,"#4a433c"]
-  ];
-  const DX=[-30,26,56,-6,42,-44],DY=[0,-24,14,34,32,-30];
-  F.forEach((f,i)=>stamp(cx+DX[i]*k,cy+DY[i]*k,f[1]*k,f[0],"stitched",f[2],f[3]));
-}
-
-/* ── row 1: music tile with embroidery ── */
+/* ── row 1: music tile with embroidered bouquet ── */
 place(525,300,357,{shape:"squircle"});
-stamp(560,238,150,"Unknown","raised");
-stamp(560,272,150,"Unknown","raised");
-cluster(505,362,1.05);
-cluster(438,222,0.5,0.8);
-stamp(630,320,44,"❀","raised",0.4,"#453e39");
+stamp(548,236,146,"Unknown","satin");
+stamp(548,270,146,"Unknown","satin");
+const TILE_R={x:400,y:175,w:250,h:250,r:85};
+embroider(490,375,300,bouquet,0,TILE_R);
+embroider(445,220,150,smallSprig,0,TILE_R);
+embroider(640,235,120,smallSprig,0.3,TILE_R);
 
 /* ── row 2 ── */
 place(150,540,164,{svgPath:P.bell,glyphText:"",glyphScale:46});
@@ -131,16 +204,16 @@ place(430,570,250,{shape:"pill",glyphText:""},Math.PI/2);
 }
 /* tall flower pill */
 place(600,570,250,{shape:"pill",glyphText:""},Math.PI/2);
-cluster(600,545,0.78,0.6);
-stamp(600,652,42,P.vol,"stitched");
+embroider(600,548,190,sprig,0,{x:550,y:472,w:100,h:196,r:50});
+stamp(600,652,42,P.vol,"satin");
 
 /* ── row 3: do-not-disturb pill ── */
 place(255,760,423,{shape:"pill",glyphText:""});
 place(148,760,132,{glyphText:"☾",glyphScale:44},0,false);
 stamp(285,728,108,"Do Not","raised");
 stamp(292,762,120,"Disturb","raised");
-stamp(245,795,46,"On","raised");
-cluster(372,770,0.5,0.5);
+stamp(245,795,46,"On","satin");
+embroider(360,762,130,smallSprig,0.4,{x:90,y:676,w:330,h:169,r:84});
 
 /* ── row 4 ── */
 place(150,920,164,{svgPath:P.flash,glyphText:"",glyphScale:42});
@@ -149,7 +222,8 @@ place(450,920,164,{svgPath:P.dial,glyphText:"",glyphScale:42});
 place(600,920,164,{svgPath:P.cam,glyphText:"",glyphScale:46});
 
 /* ── row 5 ── */
-place(300,1042,150,{glyphText:"✿",glyphScale:50,glyphStyle:"stitched",glyphColor:"#514a42"});
+place(300,1042,150,{glyphText:""});
+embroider(300,1042,120,g=>blossom(g,60,60,46,5,0.2),0,{x:250,y:992,w:100,h:100,r:50});
 place(450,1042,150,{glyphText:"⊂",glyphScale:40});
 place(600,1042,150,{glyphText:"O",glyphScale:42});
 

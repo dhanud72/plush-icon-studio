@@ -319,6 +319,35 @@ function drawGlyphStitched(g,S,rng,mask,color){
     }
   }
 }
+/* bright raised satin embroidery — solid fill, thread sheen, raised shadow */
+function drawGlyphSatin(g,S,rng,mask,color){
+  const k=S/512,bb=mask.bbox||{x:0,y:0,w:S,h:S};
+  /* raised drop shadow */
+  g.save();g.globalAlpha=0.5;g.filter=`blur(${2*k}px)`;
+  g.drawImage(tintMask(mask,"rgb(5,3,2)"),0.5*k,3*k);g.restore();
+  /* solid fill */
+  g.drawImage(tintMask(mask,color),0,0);
+  /* parallel satin threads, clipped to the glyph */
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  const tg=t.getContext("2d");
+  tg.save();tg.translate(S/2,S/2);tg.rotate(-0.55);
+  for(let y=-S;y<S;y+=2.6*k){
+    tg.strokeStyle=(Math.round(y/(2.6*k))%2===0)?"rgba(255,255,255,0.30)":"rgba(0,0,0,0.14)";
+    tg.lineWidth=1.3*k;tg.beginPath();tg.moveTo(-S,y);tg.lineTo(S,y);tg.stroke();
+  }
+  tg.restore();
+  tg.globalCompositeOperation="destination-in";tg.drawImage(mask.canvas,0,0);
+  g.drawImage(t,0,0);
+  /* gentle top-lit sheen for the raised bead */
+  const u=document.createElement("canvas");u.width=S;u.height=S;
+  const ug=u.getContext("2d");ug.drawImage(mask.canvas,0,0);
+  ug.globalCompositeOperation="source-in";
+  const gr=ug.createLinearGradient(0,bb.y,0,bb.y+bb.h);
+  gr.addColorStop(0,"rgba(255,255,255,0.28)");gr.addColorStop(0.5,"rgba(255,255,255,0)");
+  gr.addColorStop(1,"rgba(0,0,0,0.14)");
+  ug.fillStyle=gr;ug.fillRect(0,0,S,S);
+  g.drawImage(u,0,0);
+}
 /* soft translucent shape, like frosted glass clouds */
 function drawGlyphFrosted(g,S,rng,mask,color){
   const k=S/512;
@@ -576,6 +605,8 @@ function renderIcon(ctx,S,spec){
       drawGlyphRaised(g,S,rng,mask,spec.glyphColor); /* flocked reads poorly on smooth bodies */
     }else if(spec.glyphStyle==="flocked"){
       drawGlyphFlocked(g,S,rng,mask,spec.glyphColor,spec.furLen,spec.density);
+    }else if(spec.glyphStyle==="satin"){
+      drawGlyphSatin(g,S,rng,mask,spec.glyphColor);
     }else if(spec.glyphStyle==="stitched"){
       drawGlyphStitched(g,S,rng,mask,spec.glyphColor);
     }else{
