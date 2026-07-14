@@ -427,6 +427,17 @@ function glassLightShadow(g,S,path,tint,thick){
   g.save();g.translate(0,S*0.03);g.scale(1,0.97);g.fill(path);g.restore();
   g.restore();
 }
+/* luminous edge bloom — premium glass glows softly at its silhouette; the
+   glow is tinted by the accent so dark/vivid glass gets a coloured halo */
+function glassGlow(g,S,path,tint,k,amount){
+  const a=amount===undefined?0.5:amount;
+  g.save();
+  g.filter=`blur(${7*k}px)`;g.globalAlpha=a;
+  g.strokeStyle=shade(tint,+0.34);g.lineWidth=6*k;g.stroke(path);
+  g.filter=`blur(${3*k}px)`;g.globalAlpha=a*0.8;
+  g.strokeStyle=shade(tint,+0.5);g.lineWidth=3*k;g.stroke(path);
+  g.restore();
+}
 /* THICKNESS = height of the glass slab, shown as a 3D beveled edge-wall.
    The wall (band between the outer edge and the inner top surface) is filled
    with a chamfer gradient — lit on the top-left, dark on the bottom-right —
@@ -505,11 +516,12 @@ function glassFrost(g,S,path,m,k,frost){
   g.fillStyle=fg;g.fillRect(0,0,S,S);
   g.restore();
 }
-function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost){
+function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost,glow){
   const k=S/512,m=shapeMetrics(shape,S);
   const cl=clarity===undefined?0.5:clarity, jelly=mode==="jelly";
   const bodyA=jelly?0.95:(0.03+(1-cl)*0.94);   /* glass: fully clear (0.03) … fully solid (0.97) */
   glassLightShadow(g,S,path,cB,thick);
+  if(glow>0.01)glassGlow(g,S,path,jelly?cA:cB,k,glow);
   g.save();
   g.shadowColor="rgba(25,18,35,0.35)";g.shadowBlur=S*0.035;g.shadowOffsetY=S*0.02;
   g.fillStyle=jelly?shadeA(cB,0,0.92):shadeA(cB,+0.04,Math.min(0.4,bodyA*0.55));
@@ -541,11 +553,12 @@ function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost)
   glassGloss(g,S,path,m,k,lx,ly,frost);
 }
 /* vivid gradient glass — tri-colour body, wave layers, thick luminous rim */
-function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost){
+function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost,glow){
   const k=S/512,m=shapeMetrics(shape,S);
   const cl=clarity===undefined?0.5:clarity;
   const va=0.1+(1-cl)*0.87;                  /* vivid: near-clear … opaque */
   glassLightShadow(g,S,path,cB,thick);
+  if(glow>0.01)glassGlow(g,S,path,cB,k,glow);
   /* deep soft shadow */
   g.save();
   g.shadowColor="rgba(60,40,100,0.45)";g.shadowBlur=S*0.05;g.shadowOffsetY=S*0.028;
@@ -689,13 +702,14 @@ function renderIcon(ctx,S,spec){
   const puff=spec.puff===undefined?1:spec.puff;
   const clarity=spec.clarity===undefined?0.5:spec.clarity;   /* 0 opaque … 1 clear */
   const frost=spec.frost===undefined?0:spec.frost;           /* 0 clear … 1 milky */
+  const glow=spec.glow===undefined?0.35:spec.glow;           /* edge bloom */
 
   if(spec.style==="clay"){
     renderClayBody(g,S,path,spec.baseColor);
   }else if(spec.style==="vividglass"){
-    renderVividGlass(g,S,rng,path,spec.shape,spec.baseColor,spec.colorB,spec.colorC,lx,ly,thick,clarity,frost);
+    renderVividGlass(g,S,rng,path,spec.shape,spec.baseColor,spec.colorB,spec.colorC,lx,ly,thick,clarity,frost,glow);
   }else if(spec.style==="glass"||spec.style==="jelly"){
-    renderGlassBody(g,S,path,spec.baseColor,spec.colorB,spec.colorC,spec.style,spec.shape,lx,ly,thick,clarity,frost);
+    renderGlassBody(g,S,path,spec.baseColor,spec.colorB,spec.colorC,spec.style,spec.shape,lx,ly,thick,clarity,frost,glow);
   }else{
     const contained=spec.style==="furglass";
     renderFurBody(g,S,rng,{path,radii,base:spec.baseColor,
@@ -739,7 +753,7 @@ function applySpec(sp,target){
   }
   for(const k of ["style","shape","glyphStyle","bg","baseColor","colorB","colorC",
     "glyphColor","bgColor","glyphText","svgPath","glyphScale","furLen","density","seed",
-    "light","glassThick","puff","clarity","frost","transp"])
+    "light","glassThick","puff","clarity","frost","transp","glow"])
     if(sp[k]!==undefined)target[k]=sp[k];
   if(sp.glyph!==undefined)target.glyphText=sp.glyph;
   return target;
