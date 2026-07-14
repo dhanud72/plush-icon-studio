@@ -744,13 +744,12 @@ function glassGloss(g,S,path,m,k,lx,ly,frost){
   const fr=frost===undefined?0:frost;
   g.save();g.clip(path);
   const gx=m.x+m.w*(0.5+lx*0.24), gy=m.y+m.h*(0.13+Math.max(0,-ly-0.3)*0.1);
-  /* clean top-edge reflection band — a soft gradient that follows the top
-     curve (no centred white blob), brightest at the very top */
-  const gl=g.createLinearGradient(0,m.y-2*k,0,m.y+m.h*0.34);
-  gl.addColorStop(0,`rgba(255,255,255,${0.42*(1-0.5*fr)})`);
-  gl.addColorStop(0.6,`rgba(255,255,255,${0.06*(1-0.5*fr)})`);
+  /* thin top-edge reflection (NOT a haze band) — hugs the top, fades fast */
+  const gl=g.createLinearGradient(0,m.y-2*k,0,m.y+m.h*0.2);
+  gl.addColorStop(0,`rgba(255,255,255,${0.4*(1-0.5*fr)})`);
+  gl.addColorStop(0.5,`rgba(255,255,255,${0.05*(1-0.5*fr)})`);
   gl.addColorStop(1,"rgba(255,255,255,0)");
-  g.fillStyle=gl;g.fillRect(m.x-4*k,m.y-4*k,m.w+8*k,m.h*0.4);
+  g.fillStyle=gl;g.fillRect(m.x-4*k,m.y-4*k,m.w+8*k,m.h*0.24);
   /* small refined wet glint near the top-light corner */
   g.filter=`blur(${(0.5+5*fr)*k}px)`;
   g.fillStyle=`rgba(255,255,255,${0.9*(1-0.85*fr)})`;
@@ -779,7 +778,9 @@ function drawFillImage(g,S,path,m,img){
 function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost,glow,fillImg){
   const k=S/512,m=shapeMetrics(shape,S);
   const cl=clarity===undefined?0.5:clarity, jelly=mode==="jelly";
-  const bodyA=jelly?0.95:(0.03+(1-cl)*0.94);   /* glass: fully clear (0.03) … fully solid (0.97) */
+  /* quadratic falloff: clear glass is TRULY transparent (near-zero haze),
+     only tinted glass carries colour. bodyA ~0.02 at cl=0.9, ~0.97 at cl=0 */
+  const bodyA=jelly?0.95:(0.02+(1-cl)*(1-cl)*0.95);
   glassLightShadow(g,S,path,cB,thick);
   if(glow>0.01)glassGlow(g,S,path,jelly?cA:cB,k,glow);
   g.save();
@@ -827,7 +828,7 @@ function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost,
 function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost,glow,fillImg){
   const k=S/512,m=shapeMetrics(shape,S);
   const cl=clarity===undefined?0.5:clarity;
-  const va=0.1+(1-cl)*0.87;                  /* vivid: near-clear … opaque */
+  const va=0.06+(1-cl)*(1-cl)*0.9;           /* vivid: near-clear … opaque (quadratic) */
   glassLightShadow(g,S,path,cB,thick);
   if(glow>0.01)glassGlow(g,S,path,cB,k,glow);
   /* deep soft shadow */
@@ -992,7 +993,7 @@ function renderIcon(ctx,S,spec){
   const glassy=spec.style==="glass"||spec.style==="jelly"||spec.style==="vividglass";
   if(glassy && spec.bg!=="transparent" && clarity>0.12){
     const zoom=1.0+0.16*clarity;                       /* stronger lens when clearer */
-    const blurPx=S*(0.006+0.055*frost);                /* clear=slight, frosted=heavy */
+    const blurPx=S*(0.002+0.06*frost);                 /* clear=crisp, frosted=heavy */
     const off0=S*(zoom-1)/2;
     const mk=(dx)=>{const c=document.createElement("canvas");c.width=S;c.height=S;
       const cc=c.getContext("2d");cc.filter=`blur(${blurPx}px)`;
