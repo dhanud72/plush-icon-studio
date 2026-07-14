@@ -697,7 +697,7 @@ function glassGlow(g,S,path,tint,k,amount){
 function glassThickness(g,S,path,m,k,lx,ly,thick,clarity){
   const cx=S/2,cy=S/2,t=thick===undefined?1:thick;
   const cl=clarity===undefined?0.5:clarity;
-  const wa=1-cl*0.72;                        /* clear glass → much fainter wall */
+  const wa=1-cl*0.85;                        /* clear glass → very faint wall */
   lx=lx===undefined?-0.55:lx; ly=ly===undefined?-0.62:ly;
   const bevel=(0.07+0.05*t)*(1-cl*0.35);     /* clear glass → thinner edge */
   const inset=1-bevel;
@@ -995,18 +995,13 @@ function renderIcon(ctx,S,spec){
     const zoom=1.0+0.16*clarity;                       /* stronger lens when clearer */
     const blurPx=S*(0.002+0.06*frost);                 /* clear=crisp, frosted=heavy */
     const off0=S*(zoom-1)/2;
-    const mk=(dx)=>{const c=document.createElement("canvas");c.width=S;c.height=S;
-      const cc=c.getContext("2d");cc.filter=`blur(${blurPx}px)`;
-      cc.drawImage(ctx.canvas,-off0+dx,-off0,S*zoom,S*zoom);cc.filter="none";return c;};
-    const base=mk(0);
+    const bl=document.createElement("canvas");bl.width=S;bl.height=S;
+    const blg=bl.getContext("2d");blg.filter=`blur(${blurPx}px)`;
+    blg.drawImage(ctx.canvas,-off0,-off0,S*zoom,S*zoom);blg.filter="none";
+    /* paint the refracted backdrop inside the glass — REPLACES the interior
+       (never brightens it), so clear glass reads exactly as see-through */
     ctx.save();ctx.clip(path);
-    ctx.drawImage(base,0,0);
-    /* chromatic aberration: red shifted one way, blue the other, faint */
-    const ca=Math.max(1,S*0.004);
-    ctx.globalCompositeOperation="lighter";ctx.globalAlpha=0.16;
-    ctx.drawImage(mk(ca),0,0);      /* warm fringe */
-    ctx.drawImage(mk(-ca),0,0);     /* cool fringe */
-    ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";
+    ctx.drawImage(bl,0,0);
     ctx.restore();
   }
 
