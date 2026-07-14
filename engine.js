@@ -467,6 +467,13 @@ function glassThickness(g,S,path,m,k,lx,ly,thick,clarity){
   hg.addColorStop(0.4,"rgba(255,255,255,0.2)");
   hg.addColorStop(1,"rgba(255,255,255,0)");
   g.strokeStyle=hg;g.lineWidth=3.2*k;g.stroke(path);
+  /* Fresnel bounce — a soft bright rim on the FAR edge where light refracts
+     through the glass and catches the opposite wall (reads as real thickness) */
+  let fgd=g.createLinearGradient(S/2-lx*m.w*0.55,S/2-ly*m.h*0.55,S/2+lx*m.w*0.25,S/2+ly*m.h*0.25);
+  fgd.addColorStop(0,"rgba(255,255,255,0.6)");
+  fgd.addColorStop(0.5,"rgba(255,255,255,0.06)");
+  fgd.addColorStop(1,"rgba(255,255,255,0)");
+  g.save();g.filter=`blur(${0.6*k}px)`;g.strokeStyle=fgd;g.lineWidth=2.6*k;g.stroke(path);g.restore();
   g.restore();
 }
 function glassGloss(g,S,path,m,k,lx,ly,frost){
