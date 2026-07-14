@@ -725,15 +725,16 @@ function glassGloss(g,S,path,m,k,lx,ly,frost){
   g.save();g.clip(path);
   const gx=m.x+m.w*(0.5+lx*0.24), gy=m.y+m.h*(0.13+Math.max(0,-ly-0.3)*0.1);
   /* broad top sheen (softer when frosted) */
-  const gl=g.createLinearGradient(0,m.y+m.h*0.02,0,m.y+m.h*0.30);
-  gl.addColorStop(0,`rgba(255,255,255,${0.62*(1-0.5*fr)})`);gl.addColorStop(1,"rgba(255,255,255,0)");
+  const gl=g.createLinearGradient(0,m.y+m.h*0.02,0,m.y+m.h*0.26);
+  gl.addColorStop(0,`rgba(255,255,255,${0.5*(1-0.5*fr)})`);gl.addColorStop(1,"rgba(255,255,255,0)");
   g.fillStyle=gl;
-  g.beginPath();g.ellipse(m.x+m.w*0.5,m.y+m.h*0.14,m.w*0.44,m.h*0.12,0,0,Math.PI*2);g.fill();
-  /* crisp wet specular streak — a bright hard highlight near the top-light */
+  g.beginPath();g.ellipse(m.x+m.w*0.5,m.y+m.h*0.12,m.w*0.4,m.h*0.09,0,0,Math.PI*2);g.fill();
+  /* small refined wet specular — a compact bright streak near the top-light */
   g.filter=`blur(${(0.5+5*fr)*k}px)`;
-  g.fillStyle=`rgba(255,255,255,${(1-0.85*fr)})`;
-  g.beginPath();g.ellipse(gx,gy,m.w*0.14,m.h*0.05,-0.5,0,Math.PI*2);g.fill();
-  g.beginPath();g.ellipse(gx-m.w*0.05,gy-m.h*0.02,m.w*0.05,m.h*0.028,-0.5,0,Math.PI*2);g.fill();
+  g.fillStyle=`rgba(255,255,255,${0.92*(1-0.85*fr)})`;
+  g.beginPath();g.ellipse(gx,gy,m.w*0.085,m.h*0.03,-0.6,0,Math.PI*2);g.fill();
+  g.fillStyle=`rgba(255,255,255,${0.7*(1-0.85*fr)})`;
+  g.beginPath();g.ellipse(gx+m.w*0.075,gy+m.h*0.01,m.w*0.028,m.h*0.016,-0.6,0,Math.PI*2);g.fill();
   g.filter="none";
   g.restore();
 }
