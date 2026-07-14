@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>fair</title>
+<style>html,body{margin:0}canvas{display:block}</style></head><body>
+<canvas id="s" width="760" height="360"></canvas>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const SCALE=2,cv=document.getElementById("s");cv.width=760*SCALE;cv.height=360*SCALE;
+const ctx=cv.getContext("2d");ctx.scale(SCALE,SCALE);
+/* ONE shared dark background with content (bright streak + dots) behind all glass */
+let bg=ctx.createRadialGradient(300,120,30,380,180,520);bg.addColorStop(0,"#3a2f52");bg.addColorStop(1,"#120e1c");
+ctx.fillStyle=bg;ctx.fillRect(0,0,760,360);
+const rng=mulberry32(6);
+for(let i=0;i<30;i++){const x=rng()*760,y=rng()*360,r=6+rng()*30;
+  ctx.fillStyle=["rgba(200,150,255,.35)","rgba(150,180,255,.3)","rgba(255,200,230,.3)","rgba(180,255,220,.25)"][i%4];
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+ctx.strokeStyle="rgba(255,255,255,.22)";ctx.lineWidth=3;
+for(let x=-360;x<760;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+360,360);ctx.stroke();}
+const wifi="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.07 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z";
+/* glass buttons render with bg:transparent so they composite over the SHARED bg */
+const base={style:"glass",shape:"squircle",glyphStyle:"raised",bg:"transparent",
+  baseColor:"#d8c8ff",colorB:"#b090f0",colorC:"#8060c8",glyphColor:"#f2ecff",svgPath:wifi,
+  glyphScale:38,seed:4,light:225,glassThick:1.3,clarity:0.95,frost:0,transp:0,glow:0.9,
+  uploadImg:null,uploadId:0};
+function tile(cx,cy,disp,over){const S=Math.round(disp*SCALE);
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  renderIcon(t.getContext("2d"),S,Object.assign({},base,over));
+  ctx.drawImage(t,cx-disp/2,cy-disp/2,disp,disp);}
+function label(x,y,s){ctx.fillStyle="#ddd";ctx.font="15px Segoe UI";ctx.textAlign="center";ctx.fillText(s,x,y);}
+tile(140,155,210,{clarity:0.96,frost:0});
+tile(380,155,210,{clarity:0.96,frost:0.55});
+tile(620,155,210,{clarity:0.5,frost:0.1});
+label(140,285,"clear (over shared bg)");label(380,285,"frosted");label(620,285,"tinted");
+document.title="EXPORT-READY";
+</script></body></html>
