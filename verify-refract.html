@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>refract</title>
+<style>body{margin:0;background:#333}canvas{display:block}</style></head><body>
+<canvas id="s" width="760" height="330"></canvas>
+<script src="engine.js"></script>
+<script>
+"use strict";
+const SCALE=2,cv=document.getElementById("s");cv.width=760*SCALE;cv.height=330*SCALE;
+const ctx=cv.getContext("2d");ctx.scale(SCALE,SCALE);
+ctx.fillStyle="#2a2f3a";ctx.fillRect(0,0,760,330);
+const wifi="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.07 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z";
+const base={style:"glass",shape:"squircle",glyphStyle:"raised",bg:"bokeh",bgColor:"#6a5acd",
+  baseColor:"#eef4ff",colorB:"#dce8f8",colorC:"#cadcf0",glyphColor:"#123",svgPath:wifi,
+  glyphScale:38,seed:4,light:225,glassThick:1.3,clarity:0.85,frost:0,transp:0,glow:0.3,
+  uploadImg:null,uploadId:0};
+function tile(cx,cy,disp,over){const S=Math.round(disp*SCALE);
+  const t=document.createElement("canvas");t.width=S;t.height=S;
+  renderIcon(t.getContext("2d"),S,Object.assign({},base,over));
+  ctx.drawImage(t,cx-disp/2,cy-disp/2,disp,disp);}
+function label(x,y,s){ctx.fillStyle="#ddd";ctx.font="14px Segoe UI";ctx.textAlign="center";ctx.fillText(s,x,y);}
+tile(140,150,210,{clarity:0.92,frost:0});
+tile(370,150,210,{clarity:0.9,frost:0.55});
+tile(600,150,210,{clarity:0.45,frost:0.1});
+label(140,272,"clear — refract/magnify");label(370,272,"frosted — blur");label(600,272,"tinted");
+document.title="EXPORT-READY";
+</script></body></html>

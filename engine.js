@@ -492,17 +492,19 @@ function glassGloss(g,S,path,m,k,lx,ly,frost){
   const fr=frost===undefined?0:frost;
   g.save();g.clip(path);
   const gx=m.x+m.w*(0.5+lx*0.24), gy=m.y+m.h*(0.13+Math.max(0,-ly-0.3)*0.1);
-  /* broad top sheen (softer when frosted) */
-  const gl=g.createLinearGradient(0,m.y+m.h*0.02,0,m.y+m.h*0.26);
-  gl.addColorStop(0,`rgba(255,255,255,${0.5*(1-0.5*fr)})`);gl.addColorStop(1,"rgba(255,255,255,0)");
-  g.fillStyle=gl;
-  g.beginPath();g.ellipse(m.x+m.w*0.5,m.y+m.h*0.12,m.w*0.4,m.h*0.09,0,0,Math.PI*2);g.fill();
-  /* small refined wet specular — a compact bright streak near the top-light */
+  /* clean top-edge reflection band — a soft gradient that follows the top
+     curve (no centred white blob), brightest at the very top */
+  const gl=g.createLinearGradient(0,m.y-2*k,0,m.y+m.h*0.34);
+  gl.addColorStop(0,`rgba(255,255,255,${0.42*(1-0.5*fr)})`);
+  gl.addColorStop(0.6,`rgba(255,255,255,${0.06*(1-0.5*fr)})`);
+  gl.addColorStop(1,"rgba(255,255,255,0)");
+  g.fillStyle=gl;g.fillRect(m.x-4*k,m.y-4*k,m.w+8*k,m.h*0.4);
+  /* small refined wet glint near the top-light corner */
   g.filter=`blur(${(0.5+5*fr)*k}px)`;
-  g.fillStyle=`rgba(255,255,255,${0.92*(1-0.85*fr)})`;
-  g.beginPath();g.ellipse(gx,gy,m.w*0.085,m.h*0.03,-0.6,0,Math.PI*2);g.fill();
-  g.fillStyle=`rgba(255,255,255,${0.7*(1-0.85*fr)})`;
-  g.beginPath();g.ellipse(gx+m.w*0.075,gy+m.h*0.01,m.w*0.028,m.h*0.016,-0.6,0,Math.PI*2);g.fill();
+  g.fillStyle=`rgba(255,255,255,${0.9*(1-0.85*fr)})`;
+  g.beginPath();g.ellipse(gx,gy,m.w*0.075,m.h*0.026,-0.6,0,Math.PI*2);g.fill();
+  g.fillStyle=`rgba(255,255,255,${0.62*(1-0.85*fr)})`;
+  g.beginPath();g.ellipse(gx+m.w*0.07,gy+m.h*0.008,m.w*0.024,m.h*0.014,-0.6,0,Math.PI*2);g.fill();
   g.filter="none";
   g.restore();
 }
@@ -516,7 +518,13 @@ function glassFrost(g,S,path,m,k,frost){
   g.fillStyle=fg;g.fillRect(0,0,S,S);
   g.restore();
 }
-function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost,glow){
+/* draw an image cover-fit, clipped to the glass shape (the lens content) */
+function drawFillImage(g,S,path,m,img){
+  const s=Math.max(m.w/img.width,m.h/img.height);
+  const iw=img.width*s,ih=img.height*s;
+  g.drawImage(img,m.x+m.w/2-iw/2,m.y+m.h/2-ih/2,iw,ih);
+}
+function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost,glow,fillImg){
   const k=S/512,m=shapeMetrics(shape,S);
   const cl=clarity===undefined?0.5:clarity, jelly=mode==="jelly";
   const bodyA=jelly?0.95:(0.03+(1-cl)*0.94);   /* glass: fully clear (0.03) … fully solid (0.97) */
@@ -528,18 +536,29 @@ function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost,
   g.fill(path);
   g.restore();
   g.save();g.clip(path);
-  /* vertical depth tint blending the three chosen colours */
-  let lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
-  if(jelly){
-    lg.addColorStop(0,shadeA(cA,+0.10,0.95));
-    lg.addColorStop(0.55,shadeA(cB,+0.02,0.55));
-    lg.addColorStop(1,shadeA(cC,-0.08,0.85));
+  if(fillImg&&fillImg.width){
+    /* the glass is a lens over an image: draw the photo, then a light
+       colour cast + vertical depth so it sits behind the glass */
+    drawFillImage(g,S,path,m,fillImg);
+    let cg=g.createLinearGradient(0,m.y,0,m.y+m.h);
+    cg.addColorStop(0,shadeA(cA,+0.10,0.14));
+    cg.addColorStop(0.6,shadeA(cB,0,0.04));
+    cg.addColorStop(1,shadeA(cC,-0.06,0.20));
+    g.fillStyle=cg;g.fillRect(0,0,S,S);
   }else{
-    lg.addColorStop(0,shadeA(cA,+0.12,bodyA));
-    lg.addColorStop(0.55,shadeA(cB,+0.04,Math.min(1,bodyA*0.82)));
-    lg.addColorStop(1,shadeA(cC,-0.05,Math.min(1,bodyA*1.05)));
+    /* vertical depth tint blending the three chosen colours */
+    let lg=g.createLinearGradient(0,m.y,0,m.y+m.h);
+    if(jelly){
+      lg.addColorStop(0,shadeA(cA,+0.10,0.95));
+      lg.addColorStop(0.55,shadeA(cB,+0.02,0.55));
+      lg.addColorStop(1,shadeA(cC,-0.08,0.85));
+    }else{
+      lg.addColorStop(0,shadeA(cA,+0.12,bodyA));
+      lg.addColorStop(0.55,shadeA(cB,+0.04,Math.min(1,bodyA*0.82)));
+      lg.addColorStop(1,shadeA(cC,-0.05,Math.min(1,bodyA*1.05)));
+    }
+    g.fillStyle=lg;g.fillRect(0,0,S,S);
   }
-  g.fillStyle=lg;g.fillRect(0,0,S,S);
   /* convex dome: a bright crown toward the light + a darker rim, so the
      button bulges. Crown fades on clear glass; rim stays subtle. */
   const dg=g.createRadialGradient(S*(0.5+lx*0.12),m.y+m.h*0.32,S*0.02,S/2,S/2,m.w*0.62);
@@ -553,7 +572,7 @@ function renderGlassBody(g,S,path,cA,cB,cC,mode,shape,lx,ly,thick,clarity,frost,
   glassGloss(g,S,path,m,k,lx,ly,frost);
 }
 /* vivid gradient glass — tri-colour body, wave layers, thick luminous rim */
-function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost,glow){
+function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost,glow,fillImg){
   const k=S/512,m=shapeMetrics(shape,S);
   const cl=clarity===undefined?0.5:clarity;
   const va=0.1+(1-cl)*0.87;                  /* vivid: near-clear … opaque */
@@ -562,9 +581,15 @@ function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost,
   /* deep soft shadow */
   g.save();
   g.shadowColor="rgba(60,40,100,0.45)";g.shadowBlur=S*0.05;g.shadowOffsetY=S*0.028;
-  g.fillStyle=shadeA(cB,0,va);g.fill(path);
+  g.fillStyle=shadeA(cB,0,fillImg&&fillImg.width?0.6:va);g.fill(path);
   g.restore();
   g.save();g.clip(path);
+  if(fillImg&&fillImg.width){
+    drawFillImage(g,S,path,m,fillImg);
+    let cg=g.createLinearGradient(m.x,m.y,m.x+m.w*0.4,m.y+m.h);
+    cg.addColorStop(0,shadeA(cA,+0.05,0.22));cg.addColorStop(1,shadeA(cC,-0.05,0.28));
+    g.fillStyle=cg;g.fillRect(0,0,S,S);
+  }else{
   /* vivid tri-colour gradient, slightly diagonal */
   let lg=g.createLinearGradient(m.x+m.w*0.15,m.y,m.x+m.w*0.55,m.y+m.h);
   lg.addColorStop(0,shadeA(cA,0,va));lg.addColorStop(0.5,shadeA(cB,0,va));lg.addColorStop(1,shadeA(cC,0,va));
@@ -594,6 +619,8 @@ function renderVividGlass(g,S,rng,path,shape,cA,cB,cC,lx,ly,thick,clarity,frost,
     wg.addColorStop(0,wv.a1);wg.addColorStop(1,wv.a2);
     g.fillStyle=wg;g.fill();
   }
+  }
+  g.globalAlpha=1;
   g.restore();
   glassFrost(g,S,path,m,k,frost);
   glassThickness(g,S,path,m,k,lx,ly,thick,cl);
@@ -704,12 +731,38 @@ function renderIcon(ctx,S,spec){
   const frost=spec.frost===undefined?0:spec.frost;           /* 0 clear … 1 milky */
   const glow=spec.glow===undefined?0.35:spec.glow;           /* edge bloom */
 
+  /* ---- REAL GLASS OPTICS: refraction + frosted blur of the backdrop ----
+     A physical lens magnifies and (if frosted) blurs whatever is behind it.
+     Sample the already-drawn backdrop, zoom it (refraction) and blur it
+     (frost/imperfection), then paint it inside the glass shape with a faint
+     chromatic-aberration split at the rim. Only runs when there IS a
+     backdrop to refract and the glass is at least partly see-through. */
+  const glassy=spec.style==="glass"||spec.style==="jelly"||spec.style==="vividglass";
+  if(glassy && spec.bg!=="transparent" && clarity>0.12){
+    const zoom=1.0+0.16*clarity;                       /* stronger lens when clearer */
+    const blurPx=S*(0.006+0.055*frost);                /* clear=slight, frosted=heavy */
+    const off0=S*(zoom-1)/2;
+    const mk=(dx)=>{const c=document.createElement("canvas");c.width=S;c.height=S;
+      const cc=c.getContext("2d");cc.filter=`blur(${blurPx}px)`;
+      cc.drawImage(ctx.canvas,-off0+dx,-off0,S*zoom,S*zoom);cc.filter="none";return c;};
+    const base=mk(0);
+    ctx.save();ctx.clip(path);
+    ctx.drawImage(base,0,0);
+    /* chromatic aberration: red shifted one way, blue the other, faint */
+    const ca=Math.max(1,S*0.004);
+    ctx.globalCompositeOperation="lighter";ctx.globalAlpha=0.16;
+    ctx.drawImage(mk(ca),0,0);      /* warm fringe */
+    ctx.drawImage(mk(-ca),0,0);     /* cool fringe */
+    ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";
+    ctx.restore();
+  }
+
   if(spec.style==="clay"){
     renderClayBody(g,S,path,spec.baseColor);
   }else if(spec.style==="vividglass"){
-    renderVividGlass(g,S,rng,path,spec.shape,spec.baseColor,spec.colorB,spec.colorC,lx,ly,thick,clarity,frost,glow);
+    renderVividGlass(g,S,rng,path,spec.shape,spec.baseColor,spec.colorB,spec.colorC,lx,ly,thick,clarity,frost,glow,spec.fillImg);
   }else if(spec.style==="glass"||spec.style==="jelly"){
-    renderGlassBody(g,S,path,spec.baseColor,spec.colorB,spec.colorC,spec.style,spec.shape,lx,ly,thick,clarity,frost,glow);
+    renderGlassBody(g,S,path,spec.baseColor,spec.colorB,spec.colorC,spec.style,spec.shape,lx,ly,thick,clarity,frost,glow,spec.fillImg);
   }else{
     const contained=spec.style==="furglass";
     renderFurBody(g,S,rng,{path,radii,base:spec.baseColor,
